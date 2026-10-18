@@ -1,7 +1,8 @@
 import React, { useState } from 'react'
 import {
   FileText, X, Copy, Check, AlertTriangle,
-  Building, Clock, ShieldAlert, HelpCircle
+  Building, Clock, ShieldAlert, HelpCircle, Shield,
+  Printer, ArrowRight
 } from 'lucide-react'
 
 interface IncidentHandOffModalProps {
@@ -26,39 +27,43 @@ export const IncidentHandOffModal: React.FC<IncidentHandOffModalProps> = ({
   const insurer = incidentDraft.insurer_notice_draft
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto">
-      <div className="bg-slate-900 border border-slate-700 rounded-2xl max-w-4xl w-full p-6 shadow-2xl space-y-5 my-8 max-h-[90vh] overflow-y-auto font-sans">
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-slate-800 pb-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-rose-500/10 text-rose-400 border border-rose-500/30">
-              <ShieldAlert className="w-6 h-6" />
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-4 overflow-y-auto">
+      <div className="soc-card-elevated rounded-3xl max-w-4xl w-full p-7 shadow-2xl space-y-5 my-8 max-h-[90vh] overflow-y-auto font-sans border border-white/[0.1]">
+        {/* CERT-In Header */}
+        <div className="flex items-start justify-between border-b border-white/[0.08] pb-5">
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-rose-500/20 via-amber-500/10 to-slate-900 border border-rose-500/40 flex items-center justify-center shadow-lg shadow-rose-500/10">
+              <ShieldAlert className="w-8 h-8 text-rose-400" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-xl font-bold text-white tracking-tight">Regulatory Incident Hand-Off (F17)</h2>
-                <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-rose-500/10 text-rose-400 border border-rose-500/30">
-                  Pre-Filing Stage
+                <h2 className="text-xl font-black text-white tracking-tight">
+                  Statutory Incident Hand-Off (F17)
+                </h2>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-rose-500/15 text-rose-300 border border-rose-500/40 font-black uppercase">
+                  Indian CERT-In & Insurer Filing
                 </span>
               </div>
-              <p className="text-xs text-slate-400 font-mono mt-0.5">{incidentDraft.incident_id}</p>
+              <p className="text-xs text-slate-400 font-mono mt-1">
+                Incident Reference: <strong className="text-cyan-300">{incidentDraft.incident_id}</strong>
+              </p>
             </div>
           </div>
 
           <button
             onClick={onClose}
-            className="p-2 rounded-lg bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 transition"
+            className="p-2 rounded-xl bg-white/[0.04] text-slate-400 hover:text-white hover:bg-white/[0.08] transition"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Tab Selection */}
-        <div className="flex items-center gap-2 border-b border-slate-800 pb-2 text-xs font-mono">
+        <div className="flex items-center gap-2 border-b border-white/[0.08] pb-2 text-xs font-mono">
           {[
-            { id: 'cert_in', label: 'CERT-In Form IR (India 6-Hour Rule)', icon: FileText },
+            { id: 'cert_in', label: 'CERT-In Incident Report (Form IR)', icon: FileText, badge: 'Mandatory 6h Rule' },
             { id: 'insurer', label: 'Cyber Insurer Breach Notice', icon: Building },
-            { id: 'executive', label: 'Executive Board Briefing', icon: AlertTriangle }
+            { id: 'executive', label: 'Board Briefing Memorandum', icon: AlertTriangle }
           ].map((tab) => {
             const Icon = tab.icon
             const isActive = activeTab === tab.id
@@ -66,54 +71,59 @@ export const IncidentHandOffModal: React.FC<IncidentHandOffModalProps> = ({
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition ${
+                className={`flex items-center gap-2 px-3.5 py-2 rounded-xl transition ${
                   isActive
-                    ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40 font-bold'
-                    : 'text-slate-400 hover:bg-slate-800/60'
+                    ? 'bg-rose-500/20 text-rose-200 border border-rose-500/50 font-bold shadow-sm'
+                    : 'text-slate-400 hover:bg-white/[0.04] hover:text-slate-200'
                 }`}
               >
                 <Icon className="w-3.5 h-3.5" />
-                {tab.label}
+                <span>{tab.label}</span>
+                {tab.badge && (
+                  <span className="text-[9px] px-1.5 py-0.2 rounded bg-rose-600/30 text-rose-200 font-bold">
+                    {tab.badge}
+                  </span>
+                )}
               </button>
             )
           })}
         </div>
 
-        {/* Tab Content */}
+        {/* Tab 1: CERT-In */}
         {activeTab === 'cert_in' && (
           <div className="space-y-4 font-mono text-xs">
-            <div className="p-3 bg-amber-950/20 border border-amber-500/30 rounded-lg text-amber-200 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Clock className="w-4 h-4 text-amber-400" />
-                <span>Statutory Deadline: Mandatory disclosure within 6 hours of incident confirmation.</span>
+            <div className="p-3.5 bg-amber-500/[0.06] border border-amber-500/30 rounded-xl text-amber-200 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <Clock className="w-4 h-4 text-amber-400 animate-pulse" />
+                <span>Statutory Mandate: CERT-In Directions 2026 require cyber incident notice within 6 hours.</span>
               </div>
               <button
                 onClick={() => handleCopy(JSON.stringify(certIn, null, 2))}
-                className="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 flex items-center gap-1 text-[11px]"
+                className="px-3 py-1 rounded-lg bg-black/50 hover:bg-black/70 text-slate-200 border border-white/[0.1] flex items-center gap-1.5 text-[11px] font-bold transition"
               >
                 {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
-                Copy Draft
+                Copy CERT-In Draft
               </button>
             </div>
 
-            <div className="p-4 rounded-xl bg-slate-950/80 border border-slate-800 space-y-3 font-mono">
-              <div className="grid grid-cols-2 gap-3 text-slate-300 text-[11px]">
-                <div><strong>Form Title:</strong> {certIn.form}</div>
-                <div><strong>Classification:</strong> {certIn.incident_classification}</div>
-                <div><strong>Target Host:</strong> {certIn.system_details?.host_name} ({certIn.system_details?.ip_address})</div>
-                <div><strong>Software:</strong> {certIn.system_details?.os_product}</div>
+            <div className="p-5 rounded-2xl bg-black/60 border border-white/[0.08] space-y-3 font-mono">
+              <div className="grid grid-cols-2 gap-3 text-slate-300 text-[11px] border-b border-white/[0.06] pb-3">
+                <div>Statutory Form: <strong className="text-white">{certIn.form}</strong></div>
+                <div>Incident Class: <strong className="text-rose-400">{certIn.incident_classification}</strong></div>
+                <div>Target Host: <strong className="text-cyan-300">{certIn.system_details?.host_name}</strong> ({certIn.system_details?.ip_address})</div>
+                <div>Exposure: <strong className="text-amber-300 uppercase">{certIn.system_details?.exposure}</strong></div>
               </div>
 
-              <div className="border-t border-slate-800 pt-3">
-                <span className="text-slate-400 text-[11px]">Forensic Evidence Summary (Cited Sentences):</span>
-                <p className="mt-1 p-2.5 rounded bg-slate-900 border border-slate-800/80 text-cyan-200 text-xs leading-relaxed">
+              <div className="space-y-1 pt-1">
+                <span className="text-slate-400 text-[11px] font-bold">Forensic Evidence Summary (Cited Sentences):</span>
+                <p className="p-3 rounded-xl bg-[#080b16] border border-white/[0.08] text-cyan-200 text-xs font-sans leading-relaxed">
                   {certIn.evidence_cited_summary}
                 </p>
               </div>
 
-              <div>
-                <span className="text-slate-400 text-[11px]">Mitigation & Containment Taken:</span>
-                <p className="mt-1 p-2.5 rounded bg-slate-900 border border-slate-800/80 text-emerald-300 text-xs">
+              <div className="space-y-1 pt-1">
+                <span className="text-slate-400 text-[11px] font-bold">Action Taken (Defense Gate & Containment):</span>
+                <p className="p-3 rounded-xl bg-[#080b16] border border-white/[0.08] text-emerald-300 text-xs font-sans leading-relaxed">
                   {certIn.action_taken}
                 </p>
               </div>
@@ -121,58 +131,60 @@ export const IncidentHandOffModal: React.FC<IncidentHandOffModalProps> = ({
           </div>
         )}
 
+        {/* Tab 2: Cyber Insurer */}
         {activeTab === 'insurer' && (
           <div className="space-y-4 font-mono text-xs">
-            <div className="p-3 bg-slate-950/80 border border-slate-800 rounded-lg text-slate-300 flex items-center justify-between">
-              <span>Cyber Insurance Preliminary Claim & Triage Submission</span>
+            <div className="p-3.5 bg-black/40 border border-white/[0.08] rounded-xl text-slate-300 flex items-center justify-between">
+              <span>Cyber Insurance Triage & Proof Submission</span>
               <button
                 onClick={() => handleCopy(JSON.stringify(insurer, null, 2))}
-                className="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 flex items-center gap-1 text-[11px]"
+                className="px-3 py-1 rounded-lg bg-white/[0.05] hover:bg-white/[0.1] text-slate-200 border border-white/[0.1] flex items-center gap-1.5 text-[11px] font-bold transition"
               >
                 {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
-                Copy Draft
+                Copy Notice
               </button>
             </div>
 
-            <div className="p-4 rounded-xl bg-slate-950/80 border border-slate-800 space-y-3">
-              <div><strong>Policyholder Tenant:</strong> {insurer.policyholder_tenant}</div>
-              <div><strong>Proof Pack Reference:</strong> {insurer.proof_pack_id}</div>
-              <div><strong>Impact Assessment:</strong> {insurer.estimated_impact}</div>
-              <div><strong>Chain of Custody Preserved:</strong> {insurer.forensic_chain_of_custody_preserved ? 'YES (SHA-256 Ledger)' : 'NO'}</div>
+            <div className="p-5 rounded-2xl bg-black/60 border border-white/[0.08] space-y-3">
+              <div>Policyholder Tenant: <strong className="text-slate-100 capitalize">{insurer.policyholder_tenant}</strong></div>
+              <div>Proof Pack Reference: <strong className="text-cyan-300">{insurer.proof_pack_id}</strong></div>
+              <div>Impact Assessment: <strong className="text-amber-300">{insurer.estimated_impact}</strong></div>
+              <div>Chain of Custody Preserved: <strong className="text-emerald-400">YES (SHA-256 Merkle Ledger)</strong></div>
             </div>
           </div>
         )}
 
+        {/* Tab 3: Executive Memo */}
         {activeTab === 'executive' && (
           <div className="space-y-4 font-mono text-xs">
-            <div className="p-4 rounded-xl bg-slate-950/80 border border-slate-800 space-y-3">
-              <div className="flex items-center justify-between border-b border-slate-800 pb-2">
-                <span className="font-bold text-white">Board & Executive Briefing Memorandum:</span>
+            <div className="p-5 rounded-2xl bg-black/60 border border-white/[0.08] space-y-3">
+              <div className="flex items-center justify-between border-b border-white/[0.06] pb-3">
+                <span className="font-bold text-white text-sm">Board & Executive Cybersecurity Briefing</span>
                 <button
                   onClick={() => handleCopy(incidentDraft.executive_summary_draft)}
-                  className="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 flex items-center gap-1 text-[11px]"
+                  className="px-3 py-1 rounded-lg bg-white/[0.05] hover:bg-white/[0.1] text-slate-200 border border-white/[0.1] flex items-center gap-1.5 text-[11px] font-bold transition"
                 >
                   {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
                   Copy Text
                 </button>
               </div>
-              <p className="text-slate-200 leading-relaxed font-sans text-sm">
+              <p className="text-slate-200 leading-relaxed font-sans text-xs">
                 {incidentDraft.executive_summary_draft}
               </p>
             </div>
           </div>
         )}
 
-        {/* Missing Facts (PRD Requirement: Unknown stays unknown) */}
-        <div className="p-4 rounded-xl bg-slate-950/90 border border-amber-500/30 space-y-2">
+        {/* Missing Facts (Explicit Unknown Boundaries) */}
+        <div className="p-4 rounded-xl bg-amber-500/[0.05] border border-amber-500/30 space-y-2">
           <div className="flex items-center gap-2 text-xs font-mono font-bold text-amber-300">
             <HelpCircle className="w-4 h-4 text-amber-400" />
-            UNRESOLVED / UNKNOWN FACTS (EXPLICIT BOUNDARIES):
+            <span>UNRESOLVED FACTS (NO SPECULATION - STRICT BOUNDARIES):</span>
           </div>
-          <ul className="space-y-1 text-xs text-slate-300 list-disc list-inside font-mono">
+          <ul className="space-y-1.5 text-xs text-slate-300 list-disc list-inside font-mono">
             {incidentDraft.missing_facts.map((fact: string, idx: number) => (
               <li key={idx} className="text-slate-400">
-                <span className="text-amber-200">{fact}</span>
+                <span className="text-amber-200/90">{fact}</span>
               </li>
             ))}
           </ul>

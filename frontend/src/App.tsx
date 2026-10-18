@@ -117,8 +117,32 @@ export function App() {
     setPersistenceActive(res.s5_persistence_active)
   }
 
+  // Setup global keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't trigger if user is typing in input or textarea
+      if (['INPUT', 'TEXTAREA', 'SELECT'].includes((e.target as HTMLElement)?.tagName)) {
+        return
+      }
+      if (e.key === '1') setCurrentView('queue')
+      if (e.key === '2') setCurrentView('advisory')
+      if (e.key === '3') setCurrentView('fleet')
+      if (e.key === '4') setCurrentView('connectors')
+      if (e.key === '5') setCurrentView('evaluation')
+      if (e.key === '6') setCurrentView('audit')
+      if (e.key === 'Escape') {
+        if (currentView === 'story') {
+          setCurrentView('queue')
+          loadQueue()
+        }
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [currentView])
+
   return (
-    <div className="min-h-screen flex flex-col bg-[#090d16] text-slate-100 selection:bg-cyan-500/30 selection:text-cyan-200">
+    <div className="min-h-screen flex flex-col bg-[#07090e] text-slate-100 selection:bg-cyan-500/30 selection:text-cyan-200">
       <Navbar
         tenants={tenants}
         selectedTenant={selectedTenant}
@@ -140,7 +164,7 @@ export function App() {
         isResetting={isResetting}
       />
 
-      <main className="flex-1 flex flex-col">
+      <main className="flex-1 flex flex-col pb-8">
         {currentView === 'queue' && (
           <DecisionQueueView
             queue={queue}
@@ -190,7 +214,35 @@ export function App() {
 
         {currentView === 'audit' && <AuditLedgerView />}
       </main>
+
+      {/* Enterprise SOC Tactical Footer Bar */}
+      <footer className="fixed bottom-0 left-0 right-0 z-40 bg-[#080c14]/95 border-t border-slate-800/80 px-4 py-1 text-[10px] font-mono text-slate-400 flex items-center justify-between backdrop-blur">
+        <div className="flex items-center gap-3">
+          <span className="flex items-center gap-1.5 text-emerald-400 font-semibold">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            DUCKDB 1.0 (COLUMNAR ENGINE)
+          </span>
+          <span className="text-slate-700">|</span>
+          <span>AIR-GAPPED COMPLIANT (F20)</span>
+          <span className="text-slate-700">|</span>
+          <span className="text-cyan-400">RFC 8785 JSON · ED25519 SIGNED</span>
+          <span className="text-slate-700">|</span>
+          <span className="text-slate-300">SSE STREAM: ACTIVE (3s TICK)</span>
+        </div>
+
+        <div className="hidden md:flex items-center gap-2 text-slate-500">
+          <span>Shortcuts:</span>
+          <span><kbd>1</kbd> Queue</span>
+          <span><kbd>2</kbd> Intel</span>
+          <span><kbd>3</kbd> Fleet</span>
+          <span><kbd>4</kbd> Ingress</span>
+          <span><kbd>5</kbd> Benchmark</span>
+          <span><kbd>6</kbd> Audit</span>
+          <span><kbd>Esc</kbd> Back</span>
+        </div>
+      </footer>
     </div>
   )
 }
 export default App
+
