@@ -142,7 +142,7 @@ export function App() {
   }, [currentView])
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#07090e] text-slate-100 selection:bg-cyan-500/30 selection:text-cyan-200">
+    <div className="min-h-screen flex flex-col bg-[#f2f7f7] text-[#14323d] soc-canvas selection:bg-teal-500/20 selection:text-teal-900">
       <Navbar
         tenants={tenants}
         selectedTenant={selectedTenant}
@@ -177,8 +177,8 @@ export function App() {
 
         {currentView === 'story' && (
           loadingStory || !assetStory ? (
-            <div className="flex-1 flex items-center justify-center p-12 text-slate-400 font-mono text-xs">
-              <span className="flex h-3 w-3 rounded-full bg-cyan-400 animate-ping mr-3" />
+            <div className="flex-1 flex items-center justify-center p-12 text-[#4d7583] font-mono text-xs">
+              <span className="flex h-3 w-3 rounded-full bg-[#0d9488] animate-ping mr-3" />
               Loading forensic asset story and telemetry...
             </div>
           ) : (
@@ -215,22 +215,22 @@ export function App() {
         {currentView === 'audit' && <AuditLedgerView />}
       </main>
 
-      {/* Enterprise SOC Tactical Footer Bar */}
-      <footer className="fixed bottom-0 left-0 right-0 z-40 bg-[#080c14]/95 border-t border-slate-800/80 px-4 py-1 text-[10px] font-mono text-slate-400 flex items-center justify-between backdrop-blur">
+      {/* Enterprise PatchGate Tactical Footer Bar */}
+      <footer className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 border-t border-[#cde5e3] px-4 py-1 text-[10px] font-mono text-[#4a6e7c] flex items-center justify-between backdrop-blur shadow-xs">
         <div className="flex items-center gap-3">
-          <span className="flex items-center gap-1.5 text-emerald-400 font-semibold">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+          <span className="flex items-center gap-1.5 text-[#0d9488] font-semibold">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#0d9488] animate-pulse" />
             DUCKDB 1.0 (COLUMNAR ENGINE)
           </span>
-          <span className="text-slate-700">|</span>
+          <span className="text-[#c1dedb]">|</span>
           <span>AIR-GAPPED OPERATION READY</span>
-          <span className="text-slate-700">|</span>
-          <span className="text-cyan-400">RFC 8785 JSON · ED25519 SIGNED</span>
-          <span className="text-slate-700">|</span>
-          <span className="text-slate-300">SSE STREAM: ACTIVE (3s TICK)</span>
+          <span className="text-[#c1dedb]">|</span>
+          <span className="text-[#0e5c6b] font-semibold">RFC 8785 JSON · ED25519 SIGNED</span>
+          <span className="text-[#c1dedb]">|</span>
+          <span className="text-[#3b616f]">SSE STREAM: ACTIVE (3s TICK)</span>
         </div>
 
-        <div className="hidden md:flex items-center gap-2 text-slate-500">
+        <div className="hidden md:flex items-center gap-2 text-[#567a87]">
           <span>Shortcuts:</span>
           <span><kbd>1</kbd> Queue</span>
           <span><kbd>2</kbd> Intel</span>
