@@ -1,0 +1,13 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.duckdb
+*.duckdb.wal
+.pytest_cache/
+*.log
+
+# Node
+node_modules/
+dist/
+.DS_Store
