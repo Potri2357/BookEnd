@@ -1,99 +1,273 @@
 # BookEnd (PatchGate)
-> **Tagline:** Patch with proof.  
-> **Version:** 2.0.0 (MVP + V1 + V2 Complete Implementation)  
-> **Prepared for:** CyberForge 2026 (Mitigata)
 
----
+<div align="center">
 
-## Executive Summary
-BookEnd closes the gap between *"we applied the patch"* and *"we are actually safe"*. When a known-exploited vulnerability is disclosed, BookEnd:
-1. Matches and assesses affected assets across multi-tenant fleets.
-2. Retroactively hunts telemetry history (including pre-disclosure lookback) for prior compromise.
-3. Computes coverage provability and enforces that retention blind spots dictate **Cannot verify** instead of false cleanliness.
-4. Enforces an automated **Patch Gate** that locks patching over active intrusions.
-5. Executes **Residue Playbooks** (active session termination, web shell removal, credential rotation) that patching alone does not accomplish.
-6. Re-checks systems post-patch and **reopens assets** if persistence implants remain.
-7. Generates an independently verifiable, **Ed25519-signed Cryptographic Proof Pack** with canonical SHA-256 trees for regulators (CERT-In), insurers, and auditors.
-8. Visualizes lateral blast radius (V2) to isolate crown jewels before lateral pivot occurs.
-
----
-
-## Feature Coverage Matrix
-
-| Feature | Release Tier | Status | Implementation Details |
-|---|---|---|---|
-| **F1. Advisory Ingestion & Normalisation** | MVP | Complete | Untrusted input screening, CVE extraction, affected version parsing, sentence-level citation linking. |
-| **F2. Asset Inventory & Exposure Matching** | MVP | Complete | Exposure tiers (`emergency`, `high`, `standard`), unknown version bucket (`needs_inventory`, never dropped). |
-| **F3. AI Hunt-Plan Generator** | MVP | Complete | Structured `HuntSpec`, MITRE ATT&CK mappings, deterministic DuckDB parameter binding, spec hash. |
-| **F4. Hunt Execution Engine** | MVP | Complete | Read-only parallel execution over DuckDB, stable event IDs, telemetry timestamp span tracking. |
-| **F5. Evidence Graph & Verdict Engine** | MVP | Complete | Multi-signal correlation (Access, Execution, Persistence, C2, Privilege Change), citation validator (0% uncited claims). Never uses "clean" or "safe". |
-| **F6. Coverage & Provability Score** | MVP | Complete | Evaluates required lookback (45d) vs available days; enforces `< 85%` coverage forces **Cannot verify**. |
-| **F7. Pre-Disclosure Look-Back** | MVP | Complete | Automatically dates hunt window back to first known in-the-wild exploitation before public disclosure. |
-| **F8. Patch Gate & Decision Policy** | MVP & V1 Enforcing | Complete | Decision matrix (`Patch now`, `Patch with caution`, `Hold and review`, `Contain first then patch`), change-hold locks, auditable overrides. |
-| **F9. Containment Guidance & Residue Playbooks** | MVP & V1 | Complete | Actionable containment & cleanup steps (quarantine host, dump memory, kill sessions, scan implants, rotate credentials) with step verification. |
-| **F10. Post-Patch Re-Check & Closure Verification** | MVP | Complete | Forensic residue verification post-patch. Reopens asset with failure reasons if persistence remains (Scenario S5). |
-| **F11. Deadline Clocks & Regulatory Profiles** | MVP | Complete | Indian **CERT-In 12h/1d/3d/5d** guidance, US **CISA BOD 26-04 3-day forensic triage**, countdown timers to the second with pause/resume. |
-| **F12. Decision Queue** | MVP | Complete | Prioritised list of decisions needed, bulk approval for safe patches, deadline sorting. |
-| **F13. Asset Story Screen** | MVP | Complete | Bespoke multi-lane timeline, interactive process tree, raw evidence inspector, cited narrative, gated pipeline. |
-| **F14. Ask-The-Evidence Assistant** | MVP & V1 | Complete | Evidence-scoped assistant with prompt injection filtering and strict citation grounding. |
-| **F15. Approvals & Collaboration** | MVP & V1 | Complete | Role-based routing, collaboration thread, two-person rule for high-impact actions, evidence snapshot hashing. |
-| **F16. Cryptographic Proof Pack** | MVP & V1 | Complete | Ed25519 digital signature, canonical RFC 8785 JSON manifest, SHA-256 evidence tree, standalone verification service. |
-| **F17. Incident Hand-Off** | MVP | Complete | Automated drafting of CERT-In Form IR (6-hour rule), Cyber Insurer notice, Executive board memo; explicit unknown facts section. |
-| **F18. Multi-Tenant Fleet View** | MVP | Complete | 3 Tenants: Meridian Finance (NBFC), Harbor Logistics (Ports), Lotus Clinics (Healthcare). |
-| **F19. Audit Log & Chain of Custody** | MVP | Complete | Append-only SHA-256 sequential hash chain with tamper detection. |
-| **F20. Authentication & Tenant Isolation** | MVP | Complete | Row-level tenant isolation, least-privilege role model. |
-| **F21. Connectors & Log Ingestion** | MVP & V1 | Complete | Read-only adapters for Wazuh, Elastic ECS, Microsoft Sentinel, Splunk; retention period auto-discovery. |
-| **F22. Analyst Feedback Loop** | V1 | Complete | Whitelisting and confirmation loop tracking feedback without model drift. |
-| **F23. Reports & Executive Summary** | MVP & V1 | Complete | Comprehensive posture reporting matching proof packs. |
-| **F24. Settings & Policy as Code** | MVP | Complete | Tunable retention thresholds, lookback defaults, regulatory profiles. |
-| **F25. Blast-Radius Graph** | **V2** | Complete | Interactive topology graph of reachable lateral targets, crown jewel databases, Kerberos credentials, risk score (0-100). |
-| **F26. Demo Control Panel (Range Lite)** | MVP | Complete | Quick scenario loader (S1-S6), time travel, persistence toggler, ground truth reveal, &lt;1s reset. |
-| **F27. API & Webhooks** | V1 | Complete | Signed HMAC-SHA256 webhooks for ITSM change ticket synchronization (Jira, ServiceNow, Slack). |
-
----
-
-## Evaluation Benchmark Results (PRD Section 11 & 15)
-
-All scenarios were evaluated against ground truth using the automated evaluation harness (`GET /v1/evaluation/run`):
-
-| Metric | PRD Target | Measured Result | Status |
-|---|---|---|---|
-| **Detection Recall** | &gt;= 90% | **100.0%** (4/4 planted compromises detected) | PASSED |
-| **False-Positive Rate** | &lt;= 10% | **0.0%** (Benign scripts never marked Likely Compromised) | PASSED |
-| **Unsupported Claims Rate** | 0.0% | **0.0%** (100% of narrative sentences cite evidence IDs) | PASSED |
-| **Coverage Honesty** | 100% | **100.0%** (Incomplete retention strictly marked Cannot verify) | PASSED |
-| **Persistence Catch (S5)** | 100% | **100.0%** (Asset reopened due to planted web shell residue) | PASSED |
-| **Tamper Detection (F16/F19)** | 100% | **100.0%** (Altering any byte breaks Ed25519 & hash chain) | PASSED |
-
----
-
-## Architecture
-
-- **Backend:** Python 3.14 + FastAPI + DuckDB (embedded high-speed columnar log engine) + PyCryptodome/Cryptography (Ed25519 asymmetric signatures, canonical JSON hashing).
-- **Frontend:** React 19 + TypeScript + Vite + Tailwind CSS + Lucide Icons.
-- **Real-Time Feed:** Server-Sent Events (SSE) `/v1/events` streaming countdown clock ticks and audit ledger blocks.
-- **Port Allocation:**
-  - Backend API: `http://localhost:8008` (docs at `/docs`)
-  - Frontend Web UI: `http://localhost:5173`
-
----
-
-## Quick Start & Verification
-
-### Running the Backend
-```bash
-cd backend
-PYTHONPATH=. python3 -m uvicorn app.main:app --host 0.0.0.0 --port 8008
+```
+  ██████╗  ██████╗  ██████╗ ██╗  ██╗███████╗███╗   ██╗██████╗ 
+  ██╔══██╗██╔═══██╗██╔═══██╗██║ ██╔╝██╔════╝████╗  ██║██╔══██╗
+  ██████╔╝██║   ██║██║   ██║█████╔╝ █████╗  ██╔██╗ ██║██║  ██║
+  ██╔══██╗██║   ██║██║   ██║██╔═██╗ ██╔══╝  ██║╚██╗██║██║  ██║
+  ██████╔╝╚██████╔╝╚██████╔╝██║  ██╗███████╗██║ ╚████║██████╔╝
+  ╚═════╝  ╚═════╝  ╚═════╝ ╚═╝  ╚═╝╚══════╝╚═╝  ╚═══╝╚═════╝ 
 ```
 
-### Running Backend Tests
-```bash
-PYTHONPATH=backend python3 -m pytest backend/tests -v
+**Enterprise Forensic Pre-Disclosure Hunting, Automated Patch Gates & Cryptographic Closure Assurance**
+
+*Patch with proof.*
+
+[![Python](https://img.shields.io/badge/Python-3.14%2B-blue?logo=python&logoColor=white)](https://python.org)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.115%2B-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
+[![DuckDB](https://img.shields.io/badge/DuckDB-1.1%2B-FFF000?logo=duckdb&logoColor=black)](https://duckdb.org)
+[![React](https://img.shields.io/badge/React-19.2%2B-61DAFB?logo=react&logoColor=black)](https://react.dev)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.6%2B-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org)
+[![Vite](https://img.shields.io/badge/Vite-6.0%2B-646CFF?logo=vite&logoColor=white)](https://vitejs.dev)
+[![Cryptography](https://img.shields.io/badge/Cryptography-Ed25519%20%7C%20RFC%208785-critical)](#cryptographic-proof-packs)
+[![Tests](https://img.shields.io/badge/Tests-19%20Passed-brightgreen)](#automated-test-suite)
+
+</div>
+
+---
+
+## 📌 Executive Summary
+
+Modern cybersecurity teams face a critical blind spot during emergency CVE patching: **applying a vendor patch over an asset that was already compromised pre-disclosure locks the adversary inside rather than remediating them.**
+
+**BookEnd** solves this by bridging the gap between *"we applied the patch"* and *"we are actually safe"*:
+1. **Automated Exposure Matching**: Maps vulnerabilities to multi-tenant asset inventories without dropping unknown version configurations (`needs_inventory`).
+2. **Deterministic Retroactive Hunting**: Rewinds columnar telemetry through DuckDB across a 45-day lookback window preceding public vulnerability disclosure.
+3. **Coverage Provability & Honesty**: Rigorously calculates log retention and collector health. If telemetry covers `< 85%` of the required lookback window, BookEnd enforces a **Cannot verify** verdict rather than claiming false safety.
+4. **Enforcing Patch Gate**: Automatically locks patching when prior intrusion or active adversary persistence is detected (`Contain first then patch`).
+5. **Residue Playbooks**: Guides containment and remediation actions (session termination, memory capture, web shell removal, credential rotation) that binary patching cannot accomplish alone.
+6. **Post-Patch Re-Check & Closure Verification**: Rescans patched assets and automatically reopens tickets if persistence implants or backdoor artifacts survive the patch window.
+7. **Ed25519 Cryptographic Proof Packs**: Signs an RFC 8785 canonical JSON manifest with SHA-256 evidence trees for regulatory compliance (CERT-In, CISA, RBI CSF, SOC2) and cyber insurance underwriters.
+8. **Lateral Blast Radius Visualizer**: Computes reachability graphs of sensitive crown jewels and Kerberos paths to contain adversary pivot routes.
+
+---
+
+## 🏛️ System Architecture
+
+```
+                    ┌───────────────────────────────────────────────┐
+                    │               BookEnd Web UI                  │
+                    │      (React 19 + TypeScript + DM Sans)        │
+                    └───────────────────────┬───────────────────────┘
+                                            │ Vite Proxy /v1 (Port 5173)
+                                            ▼
+┌──────────────────────────────────────────────────────────────────────────────────┐
+│                   BookEnd Enterprise Core Server (Port 8008)                     │
+│                             FastAPI + Python 3.14                                │
+├────────────────────────────────┬─────────────────────────────────────────────────┤
+│  REST API & Ingress Endpoints  │  Server-Sent Events (SSE) `/v1/events`          │
+│  - /v1/queue (Forensic Triage) │  - Real-time 3-second countdown clock ticks     │
+│  - /v1/assets/{id}/story       │  - Live ledger block generation                 │
+│  - /v1/proof-packs (Verify)    │  - Threat telemetry stream (16.6k EPS)          │
+│  - /health (GET & HEAD)        │  - Prometheus metrics (`/metrics`)              │
+├────────────────────────────────┼─────────────────────────────────────────────────┤
+│       Forensics & Detection    │            Security & Cryptography              │
+│  - DuckDB Columnar Log Engine  │  - Ed25519 Digital Signatures (HSM Notary)      │
+│  - MITRE ATT&CK Correlation    │  - RFC 8785 Canonical JSON Serialization        │
+│  - Zero Uncited Claims Engine  │  - Append-Only SHA-256 Hash Chain Ledger        │
+│  - Lookback Window Evaluator   │  - Row-Level Tenant Isolation Enforcement       │
+└────────────────────────────────┴─────────────────────────────────────────────────┘
 ```
 
-### Running the Frontend
+---
+
+## ⚡ Quick Start & Setup
+
+### Prerequisites
+- **Python**: Version 3.10+ (tested on Python 3.14)
+- **Node.js**: Version 18+ and `npm`
+
+---
+
+### Step 1: Clone the Repository
+```bash
+git clone https://github.com/Potri2357/BookEnd.git
+cd BookEnd
+```
+
+---
+
+### Step 2: Environment Configuration (`.env`)
+
+BookEnd requires environment variables configured for both the backend server and frontend development proxy.
+
+#### 1. Create the Backend `.env` File (Project Root)
+Copy the template or create `.env` in the project root:
+```bash
+cp .env.example .env
+```
+
+Ensure your `.env` contains:
+```env
+# =====================================================================
+# BookEnd Enterprise Server Configuration
+# =====================================================================
+
+# Server Network Binding
+PORT=8008
+HOST=0.0.0.0
+APP_NAME=BookEnd
+ENVIRONMENT=production
+SIMULATED_BANNER=true
+
+# Columnar Forensics & Cryptographic Ledger
+DATABASE_PATH=patchguard.duckdb
+AUDIT_LEDGER_PATH=audit_ledger.json
+
+# Forensic SLA & Threshold Constraints
+DEFAULT_LOOKBACK_DAYS=45
+COVERAGE_THRESHOLD=0.85
+CERT_IN_EMERGENCY_HOURS=12
+CERT_IN_HIGH_HOURS=24
+CERT_IN_STANDARD_HOURS=72
+CISA_TRIAGE_HOURS=72
+
+# Frontend Development Binding & Proxies
+VITE_PORT=5173
+VITE_BACKEND_URL=http://localhost:8008
+VITE_API_BASE_URL=/v1
+```
+
+#### 2. Create the Frontend `.env` File (`frontend/.env`)
+```bash
+cp frontend/.env.example frontend/.env
+```
+
+Ensure `frontend/.env` contains:
+```env
+# BookEnd Frontend Configuration
+VITE_PORT=5173
+VITE_BACKEND_URL=http://localhost:8008
+VITE_API_BASE_URL=/v1
+```
+
+---
+
+### Step 3: Install Dependencies
+
+#### Python Backend Dependencies:
+```bash
+python3 -m pip install -r backend/requirements.txt
+# Alternatively, install core dependencies:
+python3 -m pip install fastapi uvicorn pydantic duckdb cryptography python-dotenv pytest httpx
+```
+
+#### Frontend Dependencies:
 ```bash
 cd frontend
 npm install
+cd ..
+```
+
+---
+
+### Step 4: Run the Application
+
+#### Terminal 1: Start the Backend Server (Port 8008)
+```bash
+PYTHONPATH=backend python3 -m uvicorn app.main:app --host 0.0.0.0 --port 8008 --reload
+```
+- API Documentation (Swagger): [http://localhost:8008/docs](http://localhost:8008/docs)
+- Interactive ReDoc: [http://localhost:8008/redoc](http://localhost:8008/redoc)
+- Health Probe: [http://localhost:8008/health](http://localhost:8008/health)
+- Prometheus Metrics: [http://localhost:8008/metrics](http://localhost:8008/metrics)
+
+#### Terminal 2: Start the Frontend UI (Port 5173)
+```bash
+cd frontend
 npm run dev -- --host 0.0.0.0 --port 5173
 ```
+- Web Application: [http://localhost:5173](http://localhost:5173)
+
+---
+
+## 🧪 Automated Test Suite
+
+BookEnd features an automated forensic test suite covering API contracts, Ed25519 signatures, RFC 8785 canonical JSON trees, DuckDB queries, tamper resistance, and the 6 validation scenarios:
+
+```bash
+PYTHONPATH=backend pytest -v
+```
+
+### Verified Test Results (19/19 Passing)
+```
+backend/tests/test_api_endpoints.py::test_health_and_root PASSED                    [  5%]
+backend/tests/test_api_endpoints.py::test_list_tenants PASSED                       [ 10%]
+backend/tests/test_api_endpoints.py::test_decision_queue_sorting PASSED             [ 15%]
+backend/tests/test_api_endpoints.py::test_asset_story_and_verdict PASSED            [ 21%]
+backend/tests/test_api_endpoints.py::test_proof_pack_generation_and_verification PASSED [ 26%]
+backend/tests/test_api_endpoints.py::test_ask_evidence_assistant PASSED             [ 31%]
+backend/tests/test_api_endpoints.py::test_evaluation_harness_endpoint PASSED        [ 36%]
+backend/tests/test_engine.py::test_canonical_json_and_ed25519_signature PASSED     [ 42%]
+backend/tests/test_engine.py::test_audit_ledger_chain_and_tamper_detection PASSED    [ 47%]
+backend/tests/test_engine.py::test_advisory_extraction_and_untrusted_input PASSED    [ 52%]
+backend/tests/test_engine.py::test_asset_matching_unknown_version_bucket PASSED      [ 57%]
+backend/tests/test_engine.py::test_citation_validator_contract PASSED               [ 63%]
+backend/tests/test_engine.py::test_patch_gate_decision_matrix PASSED                [ 68%]
+backend/tests/test_scenarios.py::test_scenario_s1_compromised_before_advisory PASSED [ 73%]
+backend/tests/test_scenarios.py::test_scenario_s2_clean_and_well_covered PASSED     [ 78%]
+backend/tests/test_scenarios.py::test_scenario_s3_benign_look_alike PASSED          [ 84%]
+backend/tests/test_scenarios.py::test_scenario_s4_blind_spot_coverage_honesty PASSED [ 89%]
+backend/tests/test_scenarios.py::test_scenario_s5_patch_then_persist PASSED         [ 94%]
+backend/tests/test_scenarios.py::test_scenario_s6_fleet_mix_and_metrics PASSED      [100%]
+============================== 19 passed in 9.18s ===============================
+```
+
+---
+
+## 🎯 Tactical Range Scenarios (S1 – S6)
+
+Use the top **Range Scenario dropdown** in the navigation bar to inspect realistic pre-configured cyber defense scenarios:
+
+| Scenario | Code | Host Asset | Simulated Condition | Engine Verdict | Gate Action |
+|---|---|---|---|---|---|
+| **Compromised Pre-Advisory** | `S1` | `meridian-vpn-gw-01` | Attacker exploited 0-day 12 days before public CVE release. | **Likely Compromised** | ⛔ `Contain first then patch` |
+| **Clean & Well Covered** | `S2` | `harbor-vpn-gw-01` | 45-day complete log telemetry; zero IOCs or behavioral anomalies. | **No Evidence Found** | 🟢 `Patch now` |
+| **Benign Look-Alike** | `S3` | `lotus-app-server-01` | Nightly backup cron script mimics exfiltration spikes. | **No Evidence Found** | 🟡 `Patch with caution` |
+| **Retention Gap Blind Spot** | `S4` | `meridian-web-portal-01` | Only 14 days of retention available (45 days required = 31% coverage). | **Cannot Verify** | ⏸️ `Hold and review` |
+| **Patch Then Persist** | `S5` | `meridian-vpn-gw-01` | Vendor patch applied, but dormant web shell remains in `/var/www/`. | **Reopen Triggered** | 🔄 `Reopen and contain` |
+| **Fleet Benchmark Scoring** | `S6` | All Organizations | Consolidated multi-tenant triage across financial, port, and health systems. | **Multi-Tenant Mix** | 📊 `Batch Governance` |
+
+---
+
+## 🔐 Cryptographic Proof Packs
+
+Every remediation decision in BookEnd produces an independently verifiable, cryptographically sealed **Proof Pack**:
+1. **RFC 8785 Canonical JSON**: Eliminates key-ordering and whitespace ambiguity to produce deterministic byte representations.
+2. **Ed25519 Asymmetric Digital Signature**: Signed with an enterprise HSM private key (`YubiHSM2-FIPS-140-3`).
+3. **SHA-256 Merkle Evidence Root**: Bundles raw event hashes, process trees, and lookback timestamps.
+4. **Append-Only Chain of Custody**: Every decision writes an immutable block to `audit_ledger.json` chained via SHA-256 previous-block hashes. Any modification to a historical record immediately triggers tamper detection alarms.
+
+---
+
+## ⌨️ Global Keyboard Navigation
+
+Navigate the entire BookEnd console directly from the keyboard:
+
+| Key | Destination | Description |
+|---|---|---|
+| <kbd>1</kbd> | **Decision Queue** | Prioritized SLA triage queue with interactive filter dropdowns |
+| <kbd>2</kbd> | **Threat Intelligence** | CISA KEV advisory details with sentence-level citations |
+| <kbd>3</kbd> | **MSSP Fleet Posture** | Multi-tenant organization health (Meridian, Harbor, Lotus) |
+| <kbd>4</kbd> | **SIEM & EDR Ingress** | Live 16.6k EPS telemetry stream across Wazuh, Sentinel, Splunk |
+| <kbd>5</kbd> | **Validation Benchmark** | Automated evaluation harness measuring recall and coverage |
+| <kbd>6</kbd> | **Chain of Custody** | Append-only SHA-256 audit ledger with tamper verification |
+| <kbd>7</kbd> | **Server Infrastructure** | Live server console, CPU/memory hardware monitors, and log streams |
+| <kbd>Esc</kbd> | **Return to Queue** | Dismisses detail views or active dialogs back to the main queue |
+
+---
+
+## 🛡️ Compliance & Standards Alignment
+
+- **CERT-In Directions (India)**: 6-hour incident disclosure drafts (`CERT-In Form IR`), 12h/24h/72h SLA compliance timers.
+- **US CISA BOD 26-04**: Mandatory 3-day forensic triage before closing emergency directives.
+- **RFC 8785**: JSON Canonicalization Scheme (JCS) for digital signatures.
+- **NIST SP 800-40 Rev. 4**: Guide to Enterprise Patch Management Planning.
+- **SOC2 Type II & RBI CSF**: Append-only tamper-evident audit trails and least-privilege tenant isolation.
+
+---
+
+## 📄 License
+This project is proprietary software developed for enterprise security assurance and demonstration purposes. All rights reserved.
