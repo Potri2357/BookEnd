@@ -53,7 +53,7 @@ allowed_origins = [o.strip() for o in cors_allowed_raw.split(",") if o.strip()]
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins if "*" not in allowed_origins else ["*"],
-    allow_origin_regex=r"^https?://(localhost|127\.0\.0\.1)(:\d+)?$|^https://book-end-pi\.vercel\.app/?$|^https://bookend-pp3k\.onrender\.com/?$",
+    allow_origin_regex=r"^https?://(localhost|127\.0\.0\.1)(:\d+)?$|^https://(postern-five|book-end-pi)\.vercel\.app/?$|^https://(postern-bwiq|bookend-pp3k)\.onrender\.com/?$",
     allow_credentials=True if "*" not in allowed_origins else False,
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"],
     allow_headers=[
@@ -92,7 +92,7 @@ async def enterprise_security_and_telemetry_middleware(request: Request, call_ne
     response.headers["Content-Security-Policy"] = (
         "default-src 'self' 'unsafe-inline' https:; "
         "img-src 'self' data: https:; "
-        "connect-src 'self' https://bookend-pp3k.onrender.com https://book-end-pi.vercel.app http://localhost:* http://127.0.0.1:* ws: wss:;"
+        "connect-src 'self' https://postern-bwiq.onrender.com https://postern-five.vercel.app https://bookend-pp3k.onrender.com https://book-end-pi.vercel.app http://localhost:* http://127.0.0.1:* ws: wss:;"
     )
 
     # Log to in-memory server telemetry buffer

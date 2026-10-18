@@ -15,8 +15,8 @@
 
 *Patch with proof.*
 
-[![Live Frontend](https://img.shields.io/badge/Production%20Frontend-Vercel-black?logo=vercel&logoColor=white)](https://book-end-pi.vercel.app)
-[![Live Backend](https://img.shields.io/badge/Production%20API-Render-46E3B7?logo=render&logoColor=white)](https://bookend-pp3k.onrender.com)
+[![Live Frontend](https://img.shields.io/badge/Production%20Frontend-Vercel-black?logo=vercel&logoColor=white)](https://postern-five.vercel.app)
+[![Live Backend](https://img.shields.io/badge/Production%20API-Render-46E3B7?logo=render&logoColor=white)](https://postern-bwiq.onrender.com)
 [![Python](https://img.shields.io/badge/Python-3.14%2B-blue?logo=python&logoColor=white)](https://python.org)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115%2B-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
 [![DuckDB](https://img.shields.io/badge/DuckDB-1.1%2B-FFF000?logo=duckdb&logoColor=black)](https://duckdb.org)

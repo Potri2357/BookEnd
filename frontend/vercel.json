@@ -3,11 +3,11 @@
   "rewrites": [
     {
       "source": "/v1/:path*",
-      "destination": "https://bookend-pp3k.onrender.com/v1/:path*"
+      "destination": "https://postern-bwiq.onrender.com/v1/:path*"
     },
     {
       "source": "/health",
-      "destination": "https://bookend-pp3k.onrender.com/health"
+      "destination": "https://postern-bwiq.onrender.com/health"
     },
     {
       "source": "/(.*)",

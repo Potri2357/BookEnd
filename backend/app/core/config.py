@@ -45,7 +45,7 @@ class Settings(BaseModel):
     WEBHOOK_TARGET_URL: str = os.getenv("WEBHOOK_TARGET_URL", "https://itsm.internal.local/webhook")
     CORS_ALLOWED_ORIGINS: str = os.getenv(
         "CORS_ALLOWED_ORIGINS",
-        "http://localhost:5173,http://127.0.0.1:5173,http://localhost:8008,http://127.0.0.1:8008,https://book-end-pi.vercel.app,https://bookend-pp3k.onrender.com"
+        "http://localhost:5173,http://127.0.0.1:5173,http://localhost:8008,http://127.0.0.1:8008,https://postern-five.vercel.app,https://postern-bwiq.onrender.com,https://book-end-pi.vercel.app,https://bookend-pp3k.onrender.com"
     )
 
     # AI Provider Settings (Hybrid: Gemini <-> Ollama <-> Deterministic)
