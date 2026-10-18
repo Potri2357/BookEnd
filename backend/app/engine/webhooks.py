@@ -22,7 +22,7 @@ class WebhookDelivery:
 class WebhookDispatcher:
     _instance = None
 
-    def __init__(self, signing_secret: str = "patchguard_webhook_secret_key_2026"):
+    def __init__(self, signing_secret: str = "postern_webhook_secret_key_2026"):
         self.signing_secret = signing_secret.encode('utf-8')
         self.history: List[WebhookDelivery] = []
 

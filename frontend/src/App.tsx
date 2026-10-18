@@ -148,7 +148,7 @@ export function App() {
   const handleBulkApprove = async () => {
     setIsBulkApproving(true)
     try {
-      await bulkApprovePatchNow('security_lead@bookend.enterprise')
+      await bulkApprovePatchNow('security_lead@postern.enterprise')
       await loadQueue()
     } finally {
       setIsBulkApproving(false)
@@ -291,7 +291,7 @@ export function App() {
         <div className="flex items-center gap-3">
           <span className="flex items-center gap-1.5 text-[#047857] font-semibold">
             <span className="w-1.5 h-1.5 rounded-full bg-[#047857] animate-pulse" />
-            BOOKEND AIR-GAP ASSURANCE ENGINE
+            POSTERN AIR-GAP ASSURANCE ENGINE
           </span>
           <span className="text-[#CBD5E1]">|</span>
           <span className="text-[#1D63ED] font-semibold">DUCKDB COLUMNAR FORENSICS</span>

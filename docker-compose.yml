@@ -5,14 +5,14 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: bookend-backend
+    container_name: postern-backend
     restart: unless-stopped
     environment:
       - PORT=8008
       - HOST=0.0.0.0
-      - APP_NAME=BookEnd
+      - APP_NAME=Postern
       - ENVIRONMENT=production
-      - DATABASE_PATH=/app/data/patchguard.duckdb
+      - DATABASE_PATH=/app/data/postern.duckdb
       - AUDIT_LEDGER_PATH=/app/data/audit_ledger.json
       - DEFAULT_LOOKBACK_DAYS=45
       - COVERAGE_THRESHOLD=0.85
@@ -23,7 +23,7 @@ services:
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}
       - WEBHOOK_TARGET_URL=${WEBHOOK_TARGET_URL:-https://itsm.internal.local/webhook}
     volumes:
-      - bookend-storage:/app/data
+      - postern-storage:/app/data
     ports:
       - "8008:8008"
 
@@ -31,7 +31,7 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    container_name: bookend-frontend
+    container_name: postern-frontend
     restart: unless-stopped
     ports:
       - "5173:80"
@@ -39,4 +39,4 @@ services:
       - backend
 
 volumes:
-  bookend-storage:
+  postern-storage:

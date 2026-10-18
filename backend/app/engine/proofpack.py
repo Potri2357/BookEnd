@@ -54,7 +54,7 @@ def generate_proof_pack(
         spec_hashes=spec_hashes,
         evidence_hashes=evidence_hashes,
         limitations_statement=LIMITATIONS_DISCLAIMER,
-        issuer="BookEnd Trust Service (Ed25519)"
+        issuer="Postern Trust Service (Ed25519)"
     )
 
     manifest_dict = manifest.model_dump()

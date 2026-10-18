@@ -1,7 +1,7 @@
 """
 Server Telemetry & Enterprise System Metrics Engine.
 Manages hardware telemetry, cluster topology, request logging, and diagnostic routines
-for the PatchGuard enterprise server.
+for the Postern enterprise server.
 """
 import os
 import time
@@ -16,10 +16,10 @@ class ServerTelemetryManager:
 
     def __init__(self):
         self.start_time = time.time()
-        self.node_id = "pg-prod-ap-south-node01"
-        self.fqdn = "pg-prod-ap-south-node01.infra.patchguard.internal"
+        self.node_id = "postern-prod-ap-south-node01"
+        self.fqdn = "postern-prod-ap-south-node01.infra.postern.internal"
         self.datacenter = "Tier-4 Dedicated Air-Gapped (Mumbai ap-south-1)"
-        self.cluster_id = "patchguard-prod-cluster-alpha"
+        self.cluster_id = "postern-prod-cluster-alpha"
         self.tier = "Enterprise Air-Gapped"
         self.kernel = platform.platform()
         self.python_version = platform.python_version()

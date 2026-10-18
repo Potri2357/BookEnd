@@ -1,5 +1,5 @@
 """
-Configuration and settings for BookEnd (PatchGate).
+Configuration and settings for Postern.
 """
 import os
 from pathlib import Path
@@ -23,13 +23,13 @@ except ImportError:
     pass
 
 class Settings(BaseModel):
-    APP_NAME: str = os.getenv("APP_NAME", "BookEnd")
+    APP_NAME: str = os.getenv("APP_NAME", "Postern")
     TAGLINE: str = os.getenv("TAGLINE", "Patch with proof.")
     VERSION: str = os.getenv("VERSION", "3.4.1-enterprise")
     ENVIRONMENT: str = os.getenv("ENVIRONMENT", "development")
     PORT: int = int(os.getenv("PORT", "8008"))
     HOST: str = os.getenv("HOST", "0.0.0.0")
-    DATABASE_PATH: str = os.getenv("DATABASE_PATH", "patchguard.duckdb")
+    DATABASE_PATH: str = os.getenv("DATABASE_PATH", "postern.duckdb" if not os.path.exists("patchguard.duckdb") else "patchguard.duckdb")
     AUDIT_LEDGER_PATH: str = os.getenv("AUDIT_LEDGER_PATH", "audit_ledger.json")
     DEFAULT_LOOKBACK_DAYS: int = int(os.getenv("DEFAULT_LOOKBACK_DAYS", "45"))
     COVERAGE_THRESHOLD: float = float(os.getenv("COVERAGE_THRESHOLD", "0.85"))
@@ -40,7 +40,7 @@ class Settings(BaseModel):
     SIMULATED_BANNER: bool = os.getenv("SIMULATED_BANNER", "True").lower() in ("true", "1", "yes")
 
     # Enterprise Server Identity & Integrations
-    SERVER_NODE_ID: str = os.getenv("SERVER_NODE_ID", "pg-prod-ap-south-node01")
+    SERVER_NODE_ID: str = os.getenv("SERVER_NODE_ID", "postern-prod-ap-south-node01")
     CLUSTER_REGION: str = os.getenv("CLUSTER_REGION", "ap-south-1")
     WEBHOOK_TARGET_URL: str = os.getenv("WEBHOOK_TARGET_URL", "https://itsm.internal.local/webhook")
     CORS_ALLOWED_ORIGINS: str = os.getenv(

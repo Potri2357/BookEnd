@@ -1,5 +1,5 @@
 """
-REST API Routes and SSE Endpoint for BookEnd.
+REST API Routes and SSE Endpoint for Postern.
 """
 import asyncio
 import json
@@ -297,7 +297,7 @@ def override_patch_gate(payload: OverridePayload, request: Request):
 @router.post("/decisions/bulk-approve")
 def bulk_approve_no_evidence(payload: Dict[str, Any], request: Request):
     sim = get_sim()
-    approver = payload.get("approver", "lead_approver@patchguard.local")
+    approver = payload.get("approver", "lead_approver@postern.local")
     role = request.headers.get("X-Approver-Role", "SecurityApprover")
     approved = []
     

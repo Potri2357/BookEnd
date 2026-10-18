@@ -1,7 +1,7 @@
 """
-BookEnd Core API Server (FastAPI).
+Postern Core API Server (FastAPI).
 Enterprise production server providing REST, SSE, Prometheus metrics,
-and real-time infrastructure telemetry for all BookEnd modules.
+and real-time infrastructure telemetry for all Postern modules.
 """
 import os
 import time
@@ -34,9 +34,9 @@ async def lifespan(app: FastAPI):
     yield
 
 app = FastAPI(
-    title="BookEnd Enterprise Assurance Server",
+    title="Postern Enterprise Assurance Server",
     description=(
-        "Enterprise-grade air-gapped BookEnd Core Server (PatchGate). "
+        "Enterprise-grade air-gapped Postern Core Server. "
         "Provides deterministic DuckDB columnar forensics, RFC 8785 JSON canonicalization, "
         "Ed25519 cryptographic proof packs, and immutable SHA-256 audit ledger chaining."
     ),
@@ -84,7 +84,7 @@ async def enterprise_security_and_telemetry_middleware(request: Request, call_ne
 
     # Enterprise security & tracking headers (SAMEORIGIN allows browser preview frames)
     response.headers["X-Correlation-ID"] = correlation_id
-    response.headers["X-Server-Node"] = f"{settings.SERVER_NODE_ID}.infra.patchguard.internal"
+    response.headers["X-Server-Node"] = f"{settings.SERVER_NODE_ID}.infra.postern.internal"
     response.headers["X-Cluster-Region"] = settings.CLUSTER_REGION
     response.headers["X-Execution-Time-Ms"] = f"{duration_ms:.2f}"
     response.headers["X-Content-Type-Options"] = "nosniff"
@@ -115,7 +115,7 @@ app.include_router(router, prefix="/v1")
 def root():
     return {
         "app": settings.APP_NAME,
-        "enterprise_name": "PatchGuard Enterprise Core",
+        "enterprise_name": "Postern Enterprise Core",
         "tagline": settings.TAGLINE,
         "version": settings.VERSION,
         "node_id": settings.SERVER_NODE_ID,
@@ -136,7 +136,7 @@ def health():
     status_data = telemetry.get_server_status()
     return {
         "status": "healthy",
-        "service": "patchguard-core-enterprise",
+        "service": "postern-core-enterprise",
         "version": settings.VERSION,
         "node_id": settings.SERVER_NODE_ID,
         "uptime_seconds": status_data["server"]["uptime_seconds"],
@@ -160,20 +160,20 @@ def prometheus_metrics():
     mem_used = status["hardware"]["memory"]["used_mb"] * 1024 * 1024
     mem_total = status["hardware"]["memory"]["total_mb"] * 1024 * 1024
 
-    metrics_text = f"""# HELP patchguard_server_uptime_seconds Total runtime of PatchGuard Core Server
-# TYPE patchguard_server_uptime_seconds counter
-patchguard_server_uptime_seconds {uptime}
+    metrics_text = f"""# HELP postern_server_uptime_seconds Total runtime of Postern Core Server
+# TYPE postern_server_uptime_seconds counter
+postern_server_uptime_seconds {uptime}
 
-# HELP patchguard_cpu_utilization_percent Current CPU utilization percentage
-# TYPE patchguard_cpu_utilization_percent gauge
-patchguard_cpu_utilization_percent {cpu}
+# HELP postern_cpu_utilization_percent Current CPU utilization percentage
+# TYPE postern_cpu_utilization_percent gauge
+postern_cpu_utilization_percent {cpu}
 
-# HELP patchguard_memory_used_bytes Memory used by server process
-# TYPE patchguard_memory_used_bytes gauge
-patchguard_memory_used_bytes {mem_used}
+# HELP postern_memory_used_bytes Memory used by server process
+# TYPE postern_memory_used_bytes gauge
+postern_memory_used_bytes {mem_used}
 
-# HELP patchguard_memory_total_bytes Total available physical memory
-# TYPE patchguard_memory_total_bytes gauge
-patchguard_memory_total_bytes {mem_total}
+# HELP postern_memory_total_bytes Total available physical memory
+# TYPE postern_memory_total_bytes gauge
+postern_memory_total_bytes {mem_total}
 """
     return metrics_text

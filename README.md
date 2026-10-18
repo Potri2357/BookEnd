@@ -1,14 +1,14 @@
-# BookEnd (PatchGuard)
+# Postern
 
 <div align="center">
 
 ```
-  ██████╗  ██████╗  ██████╗ ██╗  ██╗███████╗███╗   ██╗██████╗ 
-  ██╔══██╗██╔═══██╗██╔═══██╗██║ ██╔╝██╔════╝████╗  ██║██╔══██╗
-  ██████╔╝██║   ██║██║   ██║█████╔╝ █████╗  ██╔██╗ ██║██║  ██║
-  ██╔══██╗██║   ██║██║   ██║██╔═██╗ ██╔══╝  ██║╚██╗██║██║  ██║
-  ██████╔╝╚██████╔╝╚██████╔╝██║  ██╗███████╗██║ ╚████║██████╔╝
-  ╚═════╝  ╚═════╝  ╚═════╝ ╚═╝  ╚═╝╚══════╝╚═╝  ╚═══╝╚═════╝ 
+  ██████╗   ██████╗  ███████╗████████╗███████╗██████╗ ███╗   ██╗
+  ██╔══██╗ ██╔═══██╗██╔════╝╚══██╔══╝██╔════╝██╔══██╗████╗  ██║
+  ██████╔╝ ██║   ██║███████╗   ██║   █████╗  ██████╔╝██╔██╗ ██║
+  ██╔═══╝  ██║   ██║╚════██║   ██║   ██╔══╝  ██╔══██╗██║╚██╗██║
+  ██║      ╚██████╔╝███████║   ██║   ███████╗██║  ██║██║ ╚████║
+  ╚═╝       ╚═════╝ ╚══════╝   ╚═╝   ╚══════╝╚═╝  ╚═╝╚═╝  ╚═══╝
 ```
 
 **Enterprise Forensic Pre-Disclosure Hunting, Automated Patch Gates & Cryptographic Closure Assurance**
@@ -34,10 +34,10 @@
 
 Modern cybersecurity teams face a critical blind spot during emergency CVE patching: **applying a vendor patch over an asset that was already compromised pre-disclosure locks the adversary inside rather than remediating them.**
 
-**BookEnd** solves this by bridging the gap between *"we applied the patch"* and *"we are actually safe"*:
+**Postern** solves this by bridging the gap between *"we applied the patch"* and *"we are actually safe"*:
 1. **Automated Exposure Matching**: Maps vulnerabilities to multi-tenant asset inventories without dropping unknown version configurations (`needs_inventory`).
 2. **Deterministic Retroactive Hunting**: Rewinds columnar telemetry through DuckDB across a 45-day lookback window preceding public vulnerability disclosure.
-3. **Coverage Provability & Honesty**: Rigorously calculates log retention and collector health. If telemetry covers `< 85%` of the required lookback window, BookEnd enforces a **Cannot verify** verdict rather than claiming false safety.
+3. **Coverage Provability & Honesty**: Rigorously calculates log retention and collector health. If telemetry covers `< 85%` of the required lookback window, Postern enforces a **Cannot verify** verdict rather than claiming false safety.
 4. **Enforcing Patch Gate**: Automatically locks patching when prior intrusion or active adversary persistence is detected (`Contain first then patch`).
 5. **Residue Playbooks**: Guides containment and remediation actions (session termination, memory capture, web shell removal, credential rotation) that binary patching cannot accomplish alone.
 6. **Post-Patch Re-Check & Closure Verification**: Rescans patched assets and automatically reopens tickets if persistence implants or backdoor artifacts survive the patch window.
@@ -50,13 +50,13 @@ Modern cybersecurity teams face a critical blind spot during emergency CVE patch
 
 ```
                     ┌───────────────────────────────────────────────┐
-                    │               BookEnd Web UI                  │
+                    │               Postern Web UI                  │
                     │      (React 19 + TypeScript + DM Sans)        │
                     └───────────────────────┬───────────────────────┘
                                             │ Vite Proxy /v1 (Port 5173)
                                             ▼
 ┌──────────────────────────────────────────────────────────────────────────────────┐
-│                   BookEnd Enterprise Core Server (Port 8008)                     │
+│                   Postern Enterprise Core Server (Port 8008)                     │
 │                             FastAPI + Python 3.14                                │
 ├────────────────────────────────┬─────────────────────────────────────────────────┤
 │  REST API & Ingress Endpoints  │  Server-Sent Events (SSE) `/v1/events`          │
@@ -85,15 +85,15 @@ Modern cybersecurity teams face a critical blind spot during emergency CVE patch
 
 ### Step 1: Clone the Repository
 ```bash
-git clone https://github.com/Potri2357/BookEnd.git
-cd BookEnd
+git clone https://github.com/Potri2357/Postern.git
+cd Postern
 ```
 
 ---
 
 ### Step 2: Environment Configuration (`.env`)
 
-BookEnd requires environment variables configured for both the backend server and frontend development proxy.
+Postern requires environment variables configured for both the backend server and frontend development proxy.
 
 #### 1. Create the Backend `.env` File (Project Root)
 Copy the template or create `.env` in the project root:
@@ -104,18 +104,18 @@ cp .env.example .env
 Ensure your `.env` contains:
 ```env
 # =====================================================================
-# BookEnd Enterprise Server Configuration
+# Postern Enterprise Server Configuration
 # =====================================================================
 
 # Server Network Binding
 PORT=8008
 HOST=0.0.0.0
-APP_NAME=BookEnd
+APP_NAME=Postern
 ENVIRONMENT=production
 SIMULATED_BANNER=true
 
 # Columnar Forensics & Cryptographic Ledger
-DATABASE_PATH=patchguard.duckdb
+DATABASE_PATH=postern.duckdb
 AUDIT_LEDGER_PATH=audit_ledger.json
 
 # Forensic SLA & Threshold Constraints
@@ -139,7 +139,7 @@ cp frontend/.env.example frontend/.env
 
 Ensure `frontend/.env` contains:
 ```env
-# BookEnd Frontend Configuration
+# Postern Frontend Configuration
 VITE_PORT=5173
 VITE_BACKEND_URL=http://localhost:8008
 VITE_API_BASE_URL=/v1
@@ -187,34 +187,38 @@ npm run dev -- --host 0.0.0.0 --port 5173
 
 ## 🧪 Automated Test Suite
 
-BookEnd features an automated forensic test suite covering API contracts, Ed25519 signatures, RFC 8785 canonical JSON trees, DuckDB queries, tamper resistance, and the 6 validation scenarios:
+Postern features an automated forensic test suite covering API contracts, Ed25519 signatures, RFC 8785 canonical JSON trees, DuckDB queries, tamper resistance, and the 6 validation scenarios:
 
 ```bash
 PYTHONPATH=backend pytest -v
 ```
 
-### Verified Test Results (19/19 Passing)
+### Verified Test Results (23/23 Passing)
 ```
-backend/tests/test_api_endpoints.py::test_health_and_root PASSED                    [  5%]
-backend/tests/test_api_endpoints.py::test_list_tenants PASSED                       [ 10%]
-backend/tests/test_api_endpoints.py::test_decision_queue_sorting PASSED             [ 15%]
-backend/tests/test_api_endpoints.py::test_asset_story_and_verdict PASSED            [ 21%]
-backend/tests/test_api_endpoints.py::test_proof_pack_generation_and_verification PASSED [ 26%]
-backend/tests/test_api_endpoints.py::test_ask_evidence_assistant PASSED             [ 31%]
-backend/tests/test_api_endpoints.py::test_evaluation_harness_endpoint PASSED        [ 36%]
-backend/tests/test_engine.py::test_canonical_json_and_ed25519_signature PASSED     [ 42%]
-backend/tests/test_engine.py::test_audit_ledger_chain_and_tamper_detection PASSED    [ 47%]
-backend/tests/test_engine.py::test_advisory_extraction_and_untrusted_input PASSED    [ 52%]
-backend/tests/test_engine.py::test_asset_matching_unknown_version_bucket PASSED      [ 57%]
-backend/tests/test_engine.py::test_citation_validator_contract PASSED               [ 63%]
-backend/tests/test_engine.py::test_patch_gate_decision_matrix PASSED                [ 68%]
+backend/tests/test_api_endpoints.py::test_health_and_root PASSED                    [  4%]
+backend/tests/test_api_endpoints.py::test_list_tenants PASSED                       [  8%]
+backend/tests/test_api_endpoints.py::test_decision_queue_sorting PASSED             [ 13%]
+backend/tests/test_api_endpoints.py::test_asset_story_and_verdict PASSED            [ 17%]
+backend/tests/test_api_endpoints.py::test_proof_pack_generation_and_verification PASSED [ 21%]
+backend/tests/test_api_endpoints.py::test_ask_evidence_assistant PASSED             [ 26%]
+backend/tests/test_api_endpoints.py::test_evaluation_harness_endpoint PASSED        [ 30%]
+backend/tests/test_api_endpoints.py::test_live_events_stream_and_actions PASSED     [ 34%]
+backend/tests/test_api_endpoints.py::test_connectors_webhook_and_export PASSED      [ 39%]
+backend/tests/test_api_endpoints.py::test_server_telemetry_and_metrics PASSED       [ 43%]
+backend/tests/test_engine.py::test_canonical_json_and_ed25519_signature PASSED     [ 47%]
+backend/tests/test_engine.py::test_audit_ledger_chain_and_tamper_detection PASSED    [ 52%]
+backend/tests/test_engine.py::test_advisory_extraction_and_untrusted_input PASSED    [ 56%]
+backend/tests/test_engine.py::test_asset_matching_unknown_version_bucket PASSED      [ 60%]
+backend/tests/test_engine.py::test_citation_validator_contract PASSED               [ 65%]
+backend/tests/test_engine.py::test_patch_gate_decision_matrix PASSED                [ 69%]
 backend/tests/test_scenarios.py::test_scenario_s1_compromised_before_advisory PASSED [ 73%]
 backend/tests/test_scenarios.py::test_scenario_s2_clean_and_well_covered PASSED     [ 78%]
-backend/tests/test_scenarios.py::test_scenario_s3_benign_look_alike PASSED          [ 84%]
-backend/tests/test_scenarios.py::test_scenario_s4_blind_spot_coverage_honesty PASSED [ 89%]
-backend/tests/test_scenarios.py::test_scenario_s5_patch_then_persist PASSED         [ 94%]
-backend/tests/test_scenarios.py::test_scenario_s6_fleet_mix_and_metrics PASSED      [100%]
-============================== 19 passed in 9.18s ===============================
+backend/tests/test_scenarios.py::test_scenario_s3_benign_look_alike PASSED          [ 82%]
+backend/tests/test_scenarios.py::test_scenario_s4_blind_spot_coverage_honesty PASSED [ 86%]
+backend/tests/test_scenarios.py::test_scenario_s5_patch_then_persist PASSED         [ 91%]
+backend/tests/test_scenarios.py::test_scenario_s6_fleet_mix_and_metrics PASSED      [ 95%]
+backend/tests/test_server_telemetry.py::test_server_telemetry_manager PASSED        [100%]
+============================== 23 passed in 10.42s ==============================
 ```
 
 ---
@@ -236,7 +240,7 @@ Use the top **Range Scenario dropdown** in the navigation bar to inspect realist
 
 ## 🔐 Cryptographic Proof Packs
 
-Every remediation decision in BookEnd produces an independently verifiable, cryptographically sealed **Proof Pack**:
+Every remediation decision in Postern produces an independently verifiable, cryptographically sealed **Proof Pack**:
 1. **RFC 8785 Canonical JSON**: Eliminates key-ordering and whitespace ambiguity to produce deterministic byte representations.
 2. **Ed25519 Asymmetric Digital Signature**: Signed with an enterprise HSM private key (`YubiHSM2-FIPS-140-3`).
 3. **SHA-256 Merkle Evidence Root**: Bundles raw event hashes, process trees, and lookback timestamps.
@@ -246,7 +250,7 @@ Every remediation decision in BookEnd produces an independently verifiable, cryp
 
 ## ⌨️ Global Keyboard Navigation
 
-Navigate the entire BookEnd console directly from the keyboard:
+Navigate the entire Postern console directly from the keyboard:
 
 | Key | Destination | Description |
 |---|---|---|

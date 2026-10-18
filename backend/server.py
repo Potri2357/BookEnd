@@ -1,5 +1,5 @@
 """
-Production entrypoint for BookEnd Core API Server on Render and Cloud environments.
+Production entrypoint for Postern Core API Server on Render and Cloud environments.
 Reads the dynamic PORT environment variable (defaulting to 10000) and binds to 0.0.0.0.
 """
 import os
@@ -20,5 +20,5 @@ if __name__ == "__main__":
         port = 10000
 
     host = os.environ.get("HOST", "0.0.0.0")
-    print(f"🚀 BookEnd Enterprise Server starting on {host}:{port} (Render entrypoint)")
+    print(f"🚀 Postern Enterprise Server starting on {host}:{port} (Render entrypoint)")
     uvicorn.run("app.main:app", host=host, port=port, app_dir=current_dir)

@@ -1,7 +1,7 @@
 services:
-  # 1. BookEnd Core FastAPI Backend
+  # 1. Postern Core FastAPI Backend
   - type: web
-    name: bookend
+    name: postern
     runtime: python
     region: oregon
     plan: free
@@ -16,11 +16,11 @@ services:
       - key: PYTHONPATH
         value: backend
       - key: APP_NAME
-        value: BookEnd
+        value: Postern
       - key: ENVIRONMENT
         value: production
       - key: DATABASE_PATH
-        value: patchguard.duckdb
+        value: postern.duckdb
       - key: AUDIT_LEDGER_PATH
         value: audit_ledger.json
       - key: SIMULATED_BANNER
@@ -34,9 +34,9 @@ services:
       - key: WEBHOOK_TARGET_URL
         value: https://itsm.internal.local/webhook
 
-  # 2. BookEnd React 19 Frontend
+  # 2. Postern React 19 Frontend
   - type: web
-    name: bookend-frontend
+    name: postern-frontend
     runtime: static
     rootDir: frontend
     buildCommand: npm install && npm run build

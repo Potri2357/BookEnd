@@ -1,5 +1,5 @@
 """
-Cryptographic signing and verification service for BookEnd Proof Packs.
+Cryptographic signing and verification service for Postern Proof Packs.
 Implements Ed25519 asymmetric signatures and canonical RFC 8785 JSON SHA-256 tree hashing.
 """
 import base64
@@ -127,7 +127,7 @@ class ProofPackSigner:
                         pass
                 else:
                     # Deterministic fallback for test & local environment consistency
-                    seed = hashlib.sha256(b"BookEndLocalDevelopmentSeedV2").digest()
+                    seed = hashlib.sha256(b"PosternLocalDevelopmentSeedV2").digest()
 
             cls._instance = cls(seed[:32])
         return cls._instance

@@ -19,7 +19,7 @@ def generate_playbook_for_asset(asset: Asset, advisory: Advisory) -> Playbook:
             title="Network Containment / VLAN Isolation",
             phase="containment",
             description=f"Isolate {asset.host_name} ({asset.ip_address}) from production network to quarantine VLAN to prevent lateral movement.",
-            owner="secops-analyst@patchguard.local",
+            owner="secops-analyst@postern.local",
             status="pending",
             verification_method="Verify ping loss from internal LAN subnet while preserving access via out-of-band management."
         ),
@@ -28,7 +28,7 @@ def generate_playbook_for_asset(asset: Asset, advisory: Advisory) -> Playbook:
             title="Forensic Evidence Preservation",
             phase="containment",
             description="Take live memory snapshot and preserve volatile network socket states before host reboot or patching.",
-            owner="dfir-lead@patchguard.local",
+            owner="dfir-lead@postern.local",
             status="pending",
             verification_method="Confirm cryptographic SHA-256 hash generated for memory dump image."
         ),
@@ -37,7 +37,7 @@ def generate_playbook_for_asset(asset: Asset, advisory: Advisory) -> Playbook:
             title="Terminate All Stolen Active Sessions",
             phase="cleanup",
             description="Flush all authenticated VPN and admin session tokens from memory and local session store (e.g. /var/run/edgegate/sessions).",
-            owner="sysadmin@patchguard.local",
+            owner="sysadmin@postern.local",
             status="pending",
             verification_method="Query auth daemon session table to confirm 0 active sessions remain."
         ),
@@ -46,7 +46,7 @@ def generate_playbook_for_asset(asset: Asset, advisory: Advisory) -> Playbook:
             title="Remove Unauthorized Web Shells & Implants",
             phase="cleanup",
             description="Scan and remove /var/www/html/assets/.sys_cache.php and check file integrity of web portal root.",
-            owner="sysadmin@patchguard.local",
+            owner="sysadmin@postern.local",
             status="pending",
             verification_method="Run file integrity checker to verify directory matches pristine distribution hash."
         ),
@@ -55,7 +55,7 @@ def generate_playbook_for_asset(asset: Asset, advisory: Advisory) -> Playbook:
             title="Rotate Administrator & Service Credentials",
             phase="cleanup",
             description="Rotate master LDAP/AD bind credentials, local root passwords, and VPN preshared keys.",
-            owner="iam-admin@patchguard.local",
+            owner="iam-admin@postern.local",
             status="pending",
             verification_method="Check password last-changed timestamp in directory service."
         ),
@@ -64,7 +64,7 @@ def generate_playbook_for_asset(asset: Asset, advisory: Advisory) -> Playbook:
             title="Audit Local Accounts for Dormant Backdoors",
             phase="cleanup",
             description="Check /etc/passwd and /etc/shadow for unauthorized accounts such as 'svc_sec_audit' or 'backdoor_adm'.",
-            owner="secops-analyst@patchguard.local",
+            owner="secops-analyst@postern.local",
             status="pending",
             verification_method="Verify diff against baseline authorized user manifest."
         )

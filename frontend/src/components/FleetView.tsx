@@ -60,7 +60,7 @@ export const FleetView: React.FC<FleetViewProps> = ({
       slaStatus: 'RETENTION GAP (15.6%)',
       slaBadgeClass: 'bg-[#E6EEF7] text-[#5E82A7] border-[#C1D0E2]',
       riskScore: 72,
-      scenarioSummary: 'Hosts S4 (Severe Log Truncation - only 7d logs). BookEnd flags Cannot Verify.'
+      scenarioSummary: 'Hosts S4 (Severe Log Truncation - only 7d logs). Postern flags Cannot Verify.'
     }
   }
 

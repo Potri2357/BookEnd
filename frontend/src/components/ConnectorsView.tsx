@@ -201,11 +201,11 @@ export const ConnectorsView: React.FC = () => {
 
         <div className="p-3 rounded-lg bg-[#F7FAFD] border border-[#E1E9F2] space-y-1.5">
           <div className="flex items-center justify-between text-[#111B36]">
-            <span>Destination: <strong className="text-[#5E82A7]">https://itsm.internal.local/webhook/patchguard</strong></span>
+            <span>Destination: <strong className="text-[#5E82A7]">https://itsm.internal.local/webhook/postern</strong></span>
             <span className="text-[#047857] font-bold">STATUS: READY (HMAC KEY ACTIVE)</span>
           </div>
           <div className="text-[11px] text-[#64748B] font-mono truncate">
-            Signature Header: <code className="text-[#111B36]">X-PatchGuard-Signature: sha256=a8f4c2e91b0d77f...</code> · Algorithm: <code className="text-[#5E82A7]">HMAC-SHA256</code>
+            Signature Header: <code className="text-[#111B36]">X-Postern-Signature: sha256=a8f4c2e91b0d77f...</code> · Algorithm: <code className="text-[#5E82A7]">HMAC-SHA256</code>
           </div>
           <div className="text-[10px] text-[#64748B] pt-1">
             Subscribed Triggers: <code className="text-[#111B36]">VERDICT_CONTAIN_FIRST</code>, <code className="text-[#111B36]">GATE_OVERRIDE_APPLIED</code>, <code className="text-[#111B36]">RECHECK_PERSISTENCE_DETECTED</code>

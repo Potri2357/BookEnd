@@ -71,7 +71,7 @@ export const ServerConsoleView: React.FC = () => {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `patchguard-sysdump-${serverData.server?.node_id || 'server'}-${Date.now()}.json`
+    a.download = `postern-sysdump-${serverData.server?.node_id || 'server'}-${Date.now()}.json`
     a.click()
     URL.revokeObjectURL(url)
   }
@@ -358,7 +358,7 @@ export const ServerConsoleView: React.FC = () => {
         {/* High-Contrast Interactive Terminal Window */}
         <div className="bg-[#0B1120] text-[#E2E8F0] p-4 rounded-lg font-mono text-[11px] leading-relaxed max-h-96 overflow-y-auto space-y-1.5 border border-[#1E293B] shadow-inner select-text">
           <div className="text-[#64748B] pb-1 border-b border-[#1E293B] text-[10px] flex items-center justify-between">
-            <span>PATCHGUARD-ENTERPRISE-SERVER // LOG BUFFER (TAIL 40 EVENTS)</span>
+            <span>POSTERN-ENTERPRISE-SERVER // LOG BUFFER (TAIL 40 EVENTS)</span>
             <span className="text-[#38BDF8]">STREAM: {isStreaming ? 'LIVE (3s POLL)' : 'PAUSED'}</span>
           </div>
 

@@ -16,7 +16,7 @@ from app.engine.extractor import screen_untrusted_input
 from app.models.schemas import EvidenceEvent, Verdict
 
 ASSISTANT_SYSTEM_DIRECTIVE = (
-    "You are the BookEnd Forensic Evidence Assistant. You only answer based on verified "
+    "You are the Postern Forensic Evidence Assistant. You only answer based on verified "
     "telemetry records provided in the case evidence. If evidence is not present, state 'Unknown'."
 )
 
@@ -36,7 +36,7 @@ def _build_forensic_prompt(
     evidence_text = "\n".join(ev_lines) if ev_lines else "No specific anomaly events recorded."
 
     return (
-        "You are the BookEnd Forensic Evidence Assistant. Your role is to answer questions strictly "
+        "You are the Postern Forensic Evidence Assistant. Your role is to answer questions strictly "
         "using the verified case telemetry below.\n\n"
         "STRICT FORENSIC RULES:\n"
         "1. Every factual statement or reason MUST include bracketed evidence citations (e.g. [EV-001] or [COVERAGE-AUDIT-01]).\n"

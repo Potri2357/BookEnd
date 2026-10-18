@@ -65,7 +65,7 @@ class AuditLedger:
     def _create_genesis_unlocked(self):
         genesis_time = datetime.now(timezone.utc).isoformat()
         prev_hash = "0" * 64
-        details = {"message": "Genesis Block of BookEnd Audit Ledger"}
+        details = {"message": "Genesis Block of Postern Audit Ledger"}
         canon = canonical_json_bytes(details).decode('utf-8')
         record_hash = sha256_hex(f"0:{genesis_time}:SYSTEM:GENESIS:system:{prev_hash}:{canon}")
         record = AuditRecord(

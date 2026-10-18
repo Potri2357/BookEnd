@@ -49,7 +49,7 @@ export const AssetStoryView: React.FC<AssetStoryViewProps> = ({
   const [chatHistory, setChatHistory] = useState<Array<{ sender: string; text: string; citations?: string[] }>>([
     {
       sender: 'assistant',
-      text: `BookEnd Evidence Assistant active for ${story.asset.host_name}. Telemetry reasoning strictly cited from case events.`,
+      text: `Postern Evidence Assistant active for ${story.asset.host_name}. Telemetry reasoning strictly cited from case events.`,
       citations: []
     }
   ])
@@ -139,7 +139,7 @@ export const AssetStoryView: React.FC<AssetStoryViewProps> = ({
   }
 
   const handleStepVerify = async (stepId: string) => {
-    await updatePlaybookStep(story.asset.id, stepId, 'verified', 'analyst@patchguard.local')
+    await updatePlaybookStep(story.asset.id, stepId, 'verified', 'analyst@postern.local')
     onRefresh()
   }
 
@@ -707,7 +707,7 @@ export const AssetStoryView: React.FC<AssetStoryViewProps> = ({
                   }`}
                 >
                   <div className="font-bold text-[9px] uppercase tracking-wider text-[#64748B] mb-0.5 font-mono">
-                    {msg.sender === 'user' ? 'Analyst' : 'PatchGate Trust Service'}
+                    {msg.sender === 'user' ? 'Analyst' : 'Postern Trust Service'}
                   </div>
                   <p className="leading-relaxed">{msg.text}</p>
                   {msg.citations && msg.citations.length > 0 && (

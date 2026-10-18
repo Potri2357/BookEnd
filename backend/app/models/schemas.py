@@ -1,5 +1,5 @@
 """
-Pydantic data models and schemas for BookEnd.
+Pydantic data models and schemas for Postern.
 """
 from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, Field
@@ -173,7 +173,7 @@ class ProofPackManifest(BaseModel):
     spec_hashes: List[str]
     evidence_hashes: List[str]
     limitations_statement: str
-    issuer: str = "BookEnd Trust Service"
+    issuer: str = "Postern Trust Service"
 
 class ProofPack(BaseModel):
     manifest: ProofPackManifest

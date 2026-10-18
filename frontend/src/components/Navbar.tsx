@@ -180,7 +180,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               </div>
               <div className="flex flex-col">
                 <span className="text-sm font-black tracking-tight text-[#0F172A] font-sans leading-tight">
-                  BOOKEND
+                  POSTERN
                 </span>
                 <span className="text-[10px] text-[#475569] font-mono leading-tight">
                   Patch with proof
@@ -498,7 +498,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                       Console Surfaces
                     </h2>
                     <p className="text-[10px] font-mono text-[#64748B] mt-0.5">
-                      BookEnd Platform
+                      Postern Platform
                     </p>
                   </div>
                 </div>
