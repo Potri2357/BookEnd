@@ -119,7 +119,7 @@ export interface Verdict {
 export interface DecisionGate {
   asset_id: string
   advisory_id: string
-  outcome: 'Patch now' | 'Patch with caution' | 'Hold and review' | 'Contain first then patch'
+  outcome: 'Patch now' | 'Patch with caution' | 'Hold and review' | 'Contain first then patch' | 'Approved & Released' | 'Overridden & Released' | string
   gate_locked: boolean
   required_roles: string[]
   override_applied: boolean
@@ -127,6 +127,7 @@ export interface DecisionGate {
   override_approver?: string
   status: string
   created_at: string
+  is_approved?: boolean
 }
 
 export interface DeadlineClock {

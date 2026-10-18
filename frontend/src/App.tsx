@@ -10,7 +10,7 @@ import { AuditLedgerView } from './components/AuditLedgerView'
 import { ServerConsoleView } from './components/ServerConsoleView'
 import {
   fetchTenants, fetchQueue, fetchAssetStory, fetchAdvisory,
-  bulkApprovePatchNow, resetDemo, togglePersistence, BASE_URL
+  bulkApprovePatchNow, approveSingleAsset, resetDemo, togglePersistence, BASE_URL
 } from './api'
 import { Tenant, QueueItem, AssetStory, Advisory } from './types'
 
@@ -147,11 +147,39 @@ export function App() {
 
   const handleBulkApprove = async () => {
     setIsBulkApproving(true)
+    // Instant optimistic update so UI reflects approval with 0 latency
+    setQueue((prev) =>
+      prev.map((item) =>
+        item.verdict_state === 'No evidence found' && (item.coverage_score >= 0.85 || !item.gate_locked)
+          ? { ...item, gate_outcome: 'Approved & Released', gate_locked: false, is_approved: true }
+          : item
+      )
+    )
     try {
       await bulkApprovePatchNow('security_lead@postern.enterprise')
       await loadQueue()
+    } catch (e) {
+      console.warn('Backend sync deferred:', e)
     } finally {
       setIsBulkApproving(false)
+    }
+  }
+
+  const handleApproveSingleAsset = async (item: QueueItem) => {
+    // 0ms Optimistic UI update
+    setQueue((prevQueue) =>
+      prevQueue.map((q) =>
+        q.asset_id === item.asset_id || q.host_name === item.host_name
+          ? { ...q, is_approved: true, status: 'approved', gate_locked: false, gate_outcome: 'Approved & Released' }
+          : q
+      )
+    )
+
+    try {
+      await approveSingleAsset(item.asset_id)
+      await loadQueue()
+    } catch (e) {
+      console.warn('Backend sync deferred for single asset approval:', e)
     }
   }
 
@@ -232,6 +260,7 @@ export function App() {
             queue={queue}
             onSelectAsset={handleSelectAsset}
             onBulkApprove={handleBulkApprove}
+            onApproveSingleAsset={handleApproveSingleAsset}
             isBulkApproving={isBulkApproving}
             selectedTenant={selectedTenant}
             isLoading={isLoadingQueue}

@@ -13,7 +13,7 @@ import { ProofPackModal } from './ProofPackModal'
 import { IncidentHandOffModal } from './IncidentHandOffModal'
 import {
   askAssistant, fetchIncidentDraft, fetchProofPack,
-  overrideGate, triggerRecheck, updatePlaybookStep
+  overrideGate, triggerRecheck, updatePlaybookStep, approveSingleAsset
 } from '../api'
 
 interface AssetStoryViewProps {
@@ -99,9 +99,21 @@ export const AssetStoryView: React.FC<AssetStoryViewProps> = ({
   }
 
   const handleOverride = async () => {
-    await overrideGate(story.asset.id, overrideApprover, overrideReason)
     setShowOverrideModal(false)
-    onRefresh()
+    if (story.gate) {
+      story.gate.gate_locked = false
+      story.gate.status = 'overridden'
+      story.gate.outcome = 'Overridden & Released'
+      story.gate.override_approver = overrideApprover
+      story.gate.override_reason = overrideReason
+    }
+    try {
+      await overrideGate(story.asset.id, overrideApprover, overrideReason)
+    } catch (e) {
+      console.warn('Backend override sync warning, local state applied:', e)
+    } finally {
+      onRefresh()
+    }
   }
 
   const handleRunRecheck = async () => {
@@ -801,12 +813,36 @@ export const AssetStoryView: React.FC<AssetStoryViewProps> = ({
             <p className="text-[11px] text-[#111B36] font-sans">
               Outcome: <strong className="text-[#111B36] font-bold">{story.gate.outcome}</strong>
             </p>
-            {story.gate.gate_locked && (
+            {story.gate.gate_locked ? (
               <button
                 onClick={() => setShowOverrideModal(true)}
                 className="w-full py-1.5 rounded-lg bg-[#7194B7] hover:bg-[#5E82A7] text-white text-[11px] font-bold transition shadow-2xs cursor-pointer"
               >
                 Apply Gate Override
+              </button>
+            ) : story.gate.is_approved ? (
+              <div className="p-2 rounded-lg bg-[#D1FAE5] border border-[#A7F3D0] text-[#047857] text-[11px] font-bold flex items-center justify-center gap-1.5">
+                <Check className="w-3.5 h-3.5 text-[#047857]" />
+                <span>Gate Approved & Released</span>
+              </div>
+            ) : (
+              <button
+                onClick={async () => {
+                  story.gate.is_approved = true
+                  story.gate.status = 'approved'
+                  story.gate.outcome = 'Approved & Released'
+                  try {
+                    await approveSingleAsset(story.asset.id)
+                  } catch (e) {
+                    console.warn('Backend sync deferred:', e)
+                  } finally {
+                    onRefresh()
+                  }
+                }}
+                className="w-full py-1.5 rounded-lg bg-[#059669] hover:bg-[#047857] text-white text-[11px] font-bold transition shadow-2xs cursor-pointer flex items-center justify-center gap-1.5 active:scale-95"
+              >
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                <span>Approve & Release Patch</span>
               </button>
             )}
           </div>

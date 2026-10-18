@@ -326,6 +326,34 @@ def bulk_approve_no_evidence(payload: Dict[str, Any], request: Request):
     )
     return {"status": "success", "approved_count": len(approved), "approved_assets": approved}
 
+@router.post("/decisions/approve-asset")
+def approve_single_asset(payload: Dict[str, Any], request: Request):
+    sim = get_sim()
+    approver = payload.get("approver", "lead_approver@postern.local")
+    role = request.headers.get("X-Approver-Role", "SecurityApprover")
+    asset_id = payload.get("asset_id", "")
+    
+    target_asset = next((a for a in sim.assets if a.id == asset_id or a.host_name == asset_id), None)
+    if not target_asset:
+        raise HTTPException(status_code=404, detail="Asset not found")
+        
+    _approved_assets.add(target_asset.id)
+    _approved_assets.add(target_asset.host_name)
+    
+    if target_asset.id in _cached_stories:
+        _cached_stories[target_asset.id]["gate"].status = "approved"
+        _cached_stories[target_asset.id]["gate"].gate_locked = False
+        _cached_stories[target_asset.id]["gate"].outcome = "Approved & Released"
+        
+    AuditLedger.get_ledger().append(
+        actor=approver,
+        role=role,
+        action="APPROVE_PATCH_NOW",
+        object_id=target_asset.id,
+        details={"asset_id": target_asset.id, "host_name": target_asset.host_name}
+    )
+    return {"status": "success", "asset_id": target_asset.id, "host_name": target_asset.host_name}
+
 # ==================== APPROVALS & COLLABORATION ====================
 class ApprovalRequestPayload(BaseModel):
     asset_id: str

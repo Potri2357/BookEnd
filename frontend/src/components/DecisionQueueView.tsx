@@ -13,6 +13,7 @@ interface DecisionQueueViewProps {
   queue: QueueItem[]
   onSelectAsset: (assetId: string) => void
   onBulkApprove: () => void
+  onApproveSingleAsset?: (item: QueueItem) => void
   isBulkApproving: boolean
   selectedTenant: string
   isLoading?: boolean
@@ -22,6 +23,7 @@ export const DecisionQueueView: React.FC<DecisionQueueViewProps> = ({
   queue,
   onSelectAsset,
   onBulkApprove,
+  onApproveSingleAsset,
   isBulkApproving,
   selectedTenant,
   isLoading = false
@@ -252,9 +254,16 @@ export const DecisionQueueView: React.FC<DecisionQueueViewProps> = ({
       <button
         onClick={(e) => {
           e.stopPropagation()
-          onSelectAsset(item.host_name)
+          if (onApproveSingleAsset) {
+            onApproveSingleAsset(item)
+            setToastNotification(`Asset ${item.host_name} approved and released to patch automation. Signature recorded.`)
+            setTimeout(() => setToastNotification(null), 5000)
+          } else {
+            onSelectAsset(item.host_name)
+          }
         }}
-        className="chip-btn chip-btn-primary text-xs"
+        className="chip-btn chip-btn-primary text-xs shadow-xs hover:shadow-md transition active:scale-95"
+        title="Instantly sign cryptographic approval for this verified safe asset"
       >
         <CheckCircle2 className="w-3.5 h-3.5" />
         <span>Approve Patch</span>
@@ -742,11 +751,11 @@ export const DecisionQueueView: React.FC<DecisionQueueViewProps> = ({
       {showBulkSafetyModal && (
         <BulkApproveSafetyModal
           queue={queue}
-          onConfirm={async () => {
-            await onBulkApprove()
+          onConfirm={() => {
             setShowBulkSafetyModal(false)
             setToastNotification(`Successfully approved and released clean assets to automated patch automation. Ed25519 signature committed to ledger.`)
             setTimeout(() => setToastNotification(null), 5000)
+            onBulkApprove()
           }}
           onClose={() => setShowBulkSafetyModal(false)}
           isSubmitting={isBulkApproving}

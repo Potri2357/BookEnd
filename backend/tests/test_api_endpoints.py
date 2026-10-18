@@ -210,3 +210,35 @@ def test_approvals_and_collaboration_endpoints(client):
     assert get_msgs.status_code == 200
     assert len(get_msgs.json()) >= 2
 
+def test_approve_single_asset_endpoint(client):
+    res = client.post("/v1/decisions/approve-asset", json={
+        "asset_id": "ASSET-MERIDIAN-002",
+        "approver": "sec_lead@enterprise.local"
+    })
+    assert res.status_code == 200
+    data = res.json()
+    assert data["status"] == "success"
+    assert data["asset_id"] == "ASSET-MERIDIAN-002"
+
+    # Verify queue reflects approval
+    q_res = client.get("/v1/queue")
+    assert q_res.status_code == 200
+    item = next((i for i in q_res.json() if i["asset_id"] == "ASSET-MERIDIAN-002"), None)
+    assert item is not None
+    assert item["is_approved"] is True
+
+    # Clean up
+    client.post("/v1/demo/reset")
+
+def test_bulk_approve_endpoint(client):
+    res = client.post("/v1/decisions/bulk-approve", json={
+        "approver": "sec_lead@enterprise.local"
+    })
+    assert res.status_code == 200
+    data = res.json()
+    assert data["status"] == "success"
+    assert data["approved_count"] >= 1
+
+    # Clean up
+    client.post("/v1/demo/reset")
+
