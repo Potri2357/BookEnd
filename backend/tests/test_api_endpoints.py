@@ -150,3 +150,63 @@ def test_proof_pack_tampered_evidence_event_rejected(client):
     verify_data = verify_res.json()
     assert verify_data["is_valid"] is False
     assert verify_data["details"]["evidence_hashes_valid"] is False
+
+def test_audit_ledger_endpoint(client):
+    res = client.get("/v1/audit/ledger")
+    assert res.status_code == 200
+    data = res.json()
+    assert "chain_length" in data
+    assert data["integrity_verified"] is True
+    assert isinstance(data["records"], list)
+    assert len(data["records"]) > 0
+    # Genesis record validation
+    genesis = data["records"][0]
+    assert genesis["index"] == 0
+    assert genesis["action"] == "GENESIS"
+
+def test_approvals_and_collaboration_endpoints(client):
+    # 1. Create approval request
+    req_res = client.post("/v1/approvals/request", json={
+        "asset_id": "ASSET-MERIDIAN-001",
+        "action_type": "approve_patch",
+        "requested_by": "analyst@enterprise.local",
+        "required_role": "SecurityApprover",
+        "evidence_data": {"asset_id": "ASSET-MERIDIAN-001", "lookback_complete": True}
+    })
+    assert req_res.status_code == 200
+    req_data = req_res.json()
+    req_id = req_data["request_id"]
+    assert req_data["status"] == "pending"
+
+    # 2. List requests for asset
+    list_res = client.get("/v1/approvals/ASSET-MERIDIAN-001/requests")
+    assert list_res.status_code == 200
+    requests = list_res.json()
+    assert any(r["request_id"] == req_id for r in requests)
+
+    # 3. Respond to approval request
+    respond_res = client.post(f"/v1/approvals/{req_id}/respond", json={
+        "action": "approve",
+        "approver": "sec_lead@enterprise.local",
+        "role": "SecurityApprover",
+        "notes": "Lookback verified clean. Approved for patch release."
+    })
+    assert respond_res.status_code == 200
+    updated_req = respond_res.json()
+    assert updated_req["status"] == "approved"
+    assert updated_req["approved_by"] == "sec_lead@enterprise.local"
+
+    # 4. Collaboration messages
+    msg_res = client.post("/v1/approvals/ASSET-MERIDIAN-001/messages", json={
+        "sender": "sec_lead@enterprise.local",
+        "role": "SecurityApprover",
+        "content": "All compliance pre-checks completed."
+    })
+    assert msg_res.status_code == 200
+    msg_data = msg_res.json()
+    assert msg_data["content"] == "All compliance pre-checks completed."
+
+    get_msgs = client.get("/v1/approvals/ASSET-MERIDIAN-001/messages")
+    assert get_msgs.status_code == 200
+    assert len(get_msgs.json()) >= 2
+

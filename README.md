@@ -1,4 +1,4 @@
-# BookEnd (PatchGate)
+# BookEnd (PatchGuard)
 
 <div align="center">
 
@@ -15,6 +15,8 @@
 
 *Patch with proof.*
 
+[![Live Frontend](https://img.shields.io/badge/Production%20Frontend-Vercel-black?logo=vercel&logoColor=white)](https://book-end-pi.vercel.app)
+[![Live Backend](https://img.shields.io/badge/Production%20API-Render-46E3B7?logo=render&logoColor=white)](https://bookend-pp3k.onrender.com)
 [![Python](https://img.shields.io/badge/Python-3.14%2B-blue?logo=python&logoColor=white)](https://python.org)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115%2B-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
 [![DuckDB](https://img.shields.io/badge/DuckDB-1.1%2B-FFF000?logo=duckdb&logoColor=black)](https://duckdb.org)
@@ -22,7 +24,7 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.6%2B-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org)
 [![Vite](https://img.shields.io/badge/Vite-6.0%2B-646CFF?logo=vite&logoColor=white)](https://vitejs.dev)
 [![Cryptography](https://img.shields.io/badge/Cryptography-Ed25519%20%7C%20RFC%208785-critical)](#cryptographic-proof-packs)
-[![Tests](https://img.shields.io/badge/Tests-19%20Passed-brightgreen)](#automated-test-suite)
+[![Tests](https://img.shields.io/badge/Tests-23%20Passed-brightgreen)](#automated-test-suite)
 
 </div>
 
@@ -226,7 +228,7 @@ Use the top **Range Scenario dropdown** in the navigation bar to inspect realist
 | **Compromised Pre-Advisory** | `S1` | `meridian-vpn-gw-01` | Attacker exploited 0-day 12 days before public CVE release. | **Likely Compromised** | ⛔ `Contain first then patch` |
 | **Clean & Well Covered** | `S2` | `harbor-vpn-gw-01` | 45-day complete log telemetry; zero IOCs or behavioral anomalies. | **No Evidence Found** | 🟢 `Patch now` |
 | **Benign Look-Alike** | `S3` | `lotus-app-server-01` | Nightly backup cron script mimics exfiltration spikes. | **No Evidence Found** | 🟡 `Patch with caution` |
-| **Retention Gap Blind Spot** | `S4` | `meridian-web-portal-01` | Only 14 days of retention available (45 days required = 31% coverage). | **Cannot Verify** | ⏸️ `Hold and review` |
+| **Retention Gap Blind Spot** | `S4` | `meridian-web-portal-01` | Only 14 days of retention available (45 days required = 31% coverage). | **Cannot Verify** | 🟡 `Patch with caution` |
 | **Patch Then Persist** | `S5` | `meridian-vpn-gw-01` | Vendor patch applied, but dormant web shell remains in `/var/www/`. | **Reopen Triggered** | 🔄 `Reopen and contain` |
 | **Fleet Benchmark Scoring** | `S6` | All Organizations | Consolidated multi-tenant triage across financial, port, and health systems. | **Multi-Tenant Mix** | 📊 `Batch Governance` |
 

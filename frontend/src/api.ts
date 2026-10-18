@@ -4,7 +4,20 @@ import {
 } from './types'
 
 function normalizeApiBaseUrl(): string {
-  let url = (import.meta.env.VITE_API_BASE_URL || '/v1').trim().replace(/\/+$/, '')
+  const envUrl = (import.meta.env.VITE_API_BASE_URL || '').trim().replace(/\/+$/, '')
+
+  // In development or when running on localhost, prefer relative '/v1' so the Vite dev server proxy
+  // forwards calls to the local FastAPI simulated backend on port 8008.
+  const isLocalhost = typeof window !== 'undefined' &&
+    (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+
+  if (import.meta.env.DEV || isLocalhost) {
+    if (!envUrl || envUrl.includes('onrender.com') || envUrl === '/v1') {
+      return '/v1'
+    }
+  }
+
+  let url = envUrl || '/v1'
   if (url.startsWith('http') && !url.endsWith('/v1')) {
     url = `${url}/v1`
   }
@@ -146,3 +159,51 @@ export async function flushServerCache() {
 export async function rotateServerKeys() {
   return apiRequest<any>('/system/rotate-keys', { method: 'POST' })
 }
+
+export async function createApprovalRequest(payload: {
+  asset_id: string
+  action_type: string
+  requested_by: string
+  required_role?: string
+  evidence_data?: any
+}) {
+  return apiRequest<any>('/approvals/request', {
+    method: 'POST',
+    body: JSON.stringify(payload)
+  })
+}
+
+export async function respondApprovalRequest(
+  requestId: string,
+  payload: {
+    action: 'approve' | 'reject'
+    approver: string
+    role?: string
+    notes: string
+    second_approver?: string
+  }
+) {
+  return apiRequest<any>(`/approvals/${encodeURIComponent(requestId)}/respond`, {
+    method: 'POST',
+    body: JSON.stringify(payload)
+  })
+}
+
+export async function fetchApprovalRequests(assetId: string) {
+  return apiRequest<any[]>(`/approvals/${encodeURIComponent(assetId)}/requests`)
+}
+
+export async function fetchAssetMessages(assetId: string) {
+  return apiRequest<any[]>(`/approvals/${encodeURIComponent(assetId)}/messages`)
+}
+
+export async function postAssetMessage(
+  assetId: string,
+  payload: { sender: string; role: string; content: string }
+) {
+  return apiRequest<any>(`/approvals/${encodeURIComponent(assetId)}/messages`, {
+    method: 'POST',
+    body: JSON.stringify(payload)
+  })
+}
+

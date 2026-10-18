@@ -46,7 +46,7 @@ def _build_forensic_prompt(
         f"CASE CONTEXT:\n"
         f"- Asset ID: {asset_id}\n"
         f"- Current Verdict: {verdict.state}\n"
-        f"- Recommended Gate: {verdict.recommended_gate}\n"
+        f"- Confidence: {verdict.confidence}\n"
         f"- Telemetry Coverage: {int(verdict.coverage_score * 100)}%\n\n"
         f"VERIFIED EVIDENCE RECORDS:\n"
         f"{evidence_text}\n\n"

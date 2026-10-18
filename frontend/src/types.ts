@@ -230,6 +230,41 @@ export interface ProofPackManifest {
   issuer: string
 }
 
+export interface AuditRecord {
+  index: number
+  timestamp: string
+  actor: string
+  role: string
+  action: string
+  object_id: string
+  details: Record<string, any>
+  prev_hash: string
+  hash: string
+}
+
+export interface ApprovalRequest {
+  request_id: string
+  asset_id: string
+  action_type: 'contain_host' | 'approve_patch' | 'override_gate' | string
+  requested_by: string
+  required_role: string
+  evidence_snapshot_hash: string
+  status: 'pending' | 'approved' | 'rejected' | 'pending_second_approval' | string
+  approved_by?: string
+  second_approver?: string
+  approval_notes?: string
+  created_at: string
+}
+
+export interface CollaborationMessage {
+  msg_id: string
+  asset_id: string
+  sender: string
+  role: string
+  content: string
+  timestamp: string
+}
+
 export interface ProofPack {
   manifest: ProofPackManifest
   signature_b64: string
@@ -239,5 +274,6 @@ export interface ProofPack {
   decision: DecisionGate
   clock: DeadlineClock
   playbook?: Playbook
-  audit_events: any[]
+  audit_events: AuditRecord[]
 }
+

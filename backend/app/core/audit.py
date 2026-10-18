@@ -63,7 +63,7 @@ class AuditLedger:
             self._persist_unlocked()
 
     def _create_genesis_unlocked(self):
-        genesis_time = "2026-10-18T00:00:00Z"
+        genesis_time = datetime.now(timezone.utc).isoformat()
         prev_hash = "0" * 64
         details = {"message": "Genesis Block of BookEnd Audit Ledger"}
         canon = canonical_json_bytes(details).decode('utf-8')
@@ -148,6 +148,13 @@ class AuditLedger:
         """
         with self._lock:
             return self._verify_integrity_unlocked()
+
+    def get_records(self, limit: int = 100) -> List[AuditRecord]:
+        """Returns the most recent records up to limit in a thread-safe manner."""
+        with self._lock:
+            if limit <= 0:
+                return []
+            return list(self.chain[-limit:])
 
     def reset(self):
         """Resets the audit ledger to a clean genesis state."""

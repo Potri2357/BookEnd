@@ -15,6 +15,7 @@ interface DecisionQueueViewProps {
   onBulkApprove: () => void
   isBulkApproving: boolean
   selectedTenant: string
+  isLoading?: boolean
 }
 
 export const DecisionQueueView: React.FC<DecisionQueueViewProps> = ({
@@ -22,7 +23,8 @@ export const DecisionQueueView: React.FC<DecisionQueueViewProps> = ({
   onSelectAsset,
   onBulkApprove,
   isBulkApproving,
-  selectedTenant
+  selectedTenant,
+  isLoading = false
 }) => {
   const [searchTerm, setSearchTerm] = useState('')
   const [verdictFilter, setVerdictFilter] = useState<string>('all')
@@ -621,7 +623,16 @@ export const DecisionQueueView: React.FC<DecisionQueueViewProps> = ({
               </tr>
             </thead>
             <tbody className="divide-y divide-[#E2E8F0]">
-              {filteredQueue.length === 0 ? (
+              {isLoading ? (
+                <tr>
+                  <td colSpan={4} className="py-14 text-center text-[#64748B] font-mono">
+                    <div className="flex items-center justify-center gap-2">
+                      <div className="w-4 h-4 border-2 border-[#1D63ED] border-t-transparent rounded-full animate-spin" />
+                      Loading asset decision queue...
+                    </div>
+                  </td>
+                </tr>
+              ) : filteredQueue.length === 0 ? (
                 <tr>
                   <td colSpan={4} className="py-14 text-center text-[#64748B] font-mono">
                     Zero items matching current criteria.

@@ -25,7 +25,7 @@ except ImportError:
 class Settings(BaseModel):
     APP_NAME: str = os.getenv("APP_NAME", "BookEnd")
     TAGLINE: str = os.getenv("TAGLINE", "Patch with proof.")
-    VERSION: str = os.getenv("VERSION", "2.0.0")
+    VERSION: str = os.getenv("VERSION", "3.4.1-enterprise")
     ENVIRONMENT: str = os.getenv("ENVIRONMENT", "development")
     PORT: int = int(os.getenv("PORT", "8008"))
     HOST: str = os.getenv("HOST", "0.0.0.0")
@@ -38,6 +38,15 @@ class Settings(BaseModel):
     CERT_IN_STANDARD_HOURS: int = int(os.getenv("CERT_IN_STANDARD_HOURS", "72"))
     CISA_TRIAGE_HOURS: int = int(os.getenv("CISA_TRIAGE_HOURS", "72"))
     SIMULATED_BANNER: bool = os.getenv("SIMULATED_BANNER", "True").lower() in ("true", "1", "yes")
+
+    # Enterprise Server Identity & Integrations
+    SERVER_NODE_ID: str = os.getenv("SERVER_NODE_ID", "pg-prod-ap-south-node01")
+    CLUSTER_REGION: str = os.getenv("CLUSTER_REGION", "ap-south-1")
+    WEBHOOK_TARGET_URL: str = os.getenv("WEBHOOK_TARGET_URL", "https://itsm.internal.local/webhook")
+    CORS_ALLOWED_ORIGINS: str = os.getenv(
+        "CORS_ALLOWED_ORIGINS",
+        "http://localhost:5173,http://127.0.0.1:5173,http://localhost:8008,http://127.0.0.1:8008,https://book-end-pi.vercel.app,https://bookend-pp3k.onrender.com"
+    )
 
     # AI Provider Settings (Hybrid: Gemini <-> Ollama <-> Deterministic)
     AI_PROVIDER: str = os.getenv("AI_PROVIDER", "auto")

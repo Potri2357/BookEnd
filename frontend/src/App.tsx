@@ -25,12 +25,32 @@ export function App() {
   const [loadingStory, setLoadingStory] = useState(false)
   const [isBulkApproving, setIsBulkApproving] = useState(false)
   const [persistenceActive, setPersistenceActive] = useState(true)
+  const [isLoadingQueue, setIsLoadingQueue] = useState(true)
+  const [backendError, setBackendError] = useState<string | null>(null)
+
+  const loadInitialData = async () => {
+    setIsLoadingQueue(true)
+    try {
+      const [tList, adv, q] = await Promise.all([
+        fetchTenants().catch((err) => { throw err }),
+        fetchAdvisory('SIM-2026-0001').catch(() => null),
+        fetchQueue(selectedTenant).catch((err) => { throw err })
+      ])
+      if (Array.isArray(tList)) setTenants(tList)
+      if (adv) setAdvisory(adv)
+      if (Array.isArray(q)) setQueue(q)
+      setBackendError(null)
+    } catch (e: any) {
+      console.error('Failed to connect to backend:', e)
+      setBackendError(e.message || 'Unable to connect to backend server')
+    } finally {
+      setIsLoadingQueue(false)
+    }
+  }
 
   // Initial load
   useEffect(() => {
-    fetchTenants().then(setTenants)
-    fetchAdvisory('SIM-2026-0001').then(setAdvisory)
-    loadQueue()
+    loadInitialData()
   }, [])
 
   // Refetch queue when tenant changes
@@ -40,37 +60,62 @@ export function App() {
 
   // Setup Server-Sent Events (SSE) for real-time live clock updates
   useEffect(() => {
-    const eventSource = new EventSource(`${BASE_URL}/events`)
-    eventSource.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data)
-        if (data.type === 'CLOCK_TICK') {
-          // Decrement remaining seconds on current queue items
-          setQueue((prev) =>
-            prev.map((item) => ({
-              ...item,
-              seconds_remaining: Math.max(0, item.seconds_remaining - 3),
-              is_breached: item.seconds_remaining - 3 <= 0
-            }))
-          )
+    let tickCount = 0
+    let eventSource: EventSource | null = null
+    try {
+      eventSource = new EventSource(`${BASE_URL}/events`)
+      eventSource.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data)
+          if (data.type === 'CLOCK_TICK') {
+            tickCount++
+            // Decrement remaining seconds on current queue items
+            setQueue((prev) =>
+              prev.map((item) => {
+                const remaining = Math.max(0, item.seconds_remaining - 3)
+                return {
+                  ...item,
+                  seconds_remaining: remaining,
+                  is_breached: remaining <= 0
+                }
+              })
+            )
+            // Periodically resync with server queue every 10 ticks (30s) to prevent clock drift
+            if (tickCount % 10 === 0) {
+              loadQueue()
+            }
+          }
+        } catch {
+          // Ignore parse error
         }
-      } catch (e) {
-        // Ignore parse error
       }
+      eventSource.onerror = () => {
+        // Suppress noisy reconnection logs
+      }
+    } catch (e) {
+      console.warn('SSE connection could not be established:', e)
     }
     return () => {
-      eventSource.close()
+      if (eventSource) {
+        eventSource.close()
+      }
     }
-  }, [])
+  }, [selectedTenant])
 
   const loadQueue = async () => {
     try {
       const q = await fetchQueue(selectedTenant)
       if (Array.isArray(q)) {
         setQueue(q)
+        setBackendError(null)
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error('Failed to load queue:', e)
+      if (queue.length === 0) {
+        setBackendError(e.message || 'Unable to connect to backend server')
+      }
+    } finally {
+      setIsLoadingQueue(false)
     }
   }
 
@@ -103,7 +148,7 @@ export function App() {
   const handleBulkApprove = async () => {
     setIsBulkApproving(true)
     try {
-      await bulkApprovePatchNow('lead_approver@patchguard.local')
+      await bulkApprovePatchNow('security_lead@bookend.enterprise')
       await loadQueue()
     } finally {
       setIsBulkApproving(false)
@@ -159,6 +204,25 @@ export function App() {
         persistenceActive={persistenceActive}
       />
 
+      {backendError && (
+        <div className="bg-[#FEF2F2] border-b border-[#FCA5A5] px-6 py-3 flex items-center justify-between text-xs text-[#991B1B] shadow-sm">
+          <div className="flex items-center gap-2">
+            <span className="font-semibold uppercase tracking-wider bg-[#DC2626] text-white px-2 py-0.5 rounded text-[10px]">
+              Server Offline
+            </span>
+            <span>
+              Could not connect to backend at <code className="bg-[#FEE2E2] px-1 py-0.5 rounded font-mono font-bold">{BASE_URL}</code> ({backendError}). Ensure simulated backend is running on port 8008.
+            </span>
+          </div>
+          <button
+            onClick={() => loadInitialData()}
+            className="px-3 py-1 bg-[#DC2626] text-white rounded font-medium hover:bg-[#B91C1C] transition cursor-pointer"
+          >
+            Retry Connection
+          </button>
+        </div>
+      )}
+
       <main className="flex-1 flex flex-col pb-8">
         {currentView === 'queue' && (
           <DecisionQueueView
@@ -167,6 +231,7 @@ export function App() {
             onBulkApprove={handleBulkApprove}
             isBulkApproving={isBulkApproving}
             selectedTenant={selectedTenant}
+            isLoading={isLoadingQueue}
           />
         )}
 
@@ -188,8 +253,15 @@ export function App() {
           )
         )}
 
-        {currentView === 'advisory' && advisory && (
-          <AdvisoryDetailView advisory={advisory} />
+        {currentView === 'advisory' && (
+          advisory ? (
+            <AdvisoryDetailView advisory={advisory} />
+          ) : (
+            <div className="glass-panel p-12 text-center rounded-2xl border border-[#E1E9F2] my-6">
+              <div className="w-8 h-8 mx-auto mb-3 border-2 border-[#1D63ED] border-t-transparent rounded-full animate-spin" />
+              <p className="text-sm font-medium text-[#64748B]">Loading Advisory Intelligence...</p>
+            </div>
+          )
         )}
 
         {currentView === 'fleet' && (

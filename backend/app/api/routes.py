@@ -289,7 +289,7 @@ def override_patch_gate(payload: OverridePayload, request: Request):
     # Send webhook alert for override
     WebhookDispatcher.get_instance().dispatch(
         event_type="GATE_OVERRIDE_APPLIED",
-        target_url="https://itsm.internal.local/webhook",
+        target_url=settings.WEBHOOK_TARGET_URL,
         payload={"asset_id": payload.asset_id, "approver": approver, "reason": reason, "role": role}
     )
     return updated_gate
@@ -301,7 +301,8 @@ def bulk_approve_no_evidence(payload: Dict[str, Any], request: Request):
     role = request.headers.get("X-Approver-Role", "SecurityApprover")
     approved = []
     
-    for a in sim.assets:
+    target_assets = [a for a in sim.assets if a.status in ["matched", "needs_inventory", "reopened"]]
+    for a in target_assets:
         story = evaluate_asset_pipeline(a)
         if story["verdict"].state == "No evidence found" and story["coverage"].adequate:
             _approved_assets.add(a.id)
@@ -320,6 +321,74 @@ def bulk_approve_no_evidence(payload: Dict[str, Any], request: Request):
         details={"approved_assets": approved}
     )
     return {"status": "success", "approved_count": len(approved), "approved_assets": approved}
+
+# ==================== APPROVALS & COLLABORATION ====================
+class ApprovalRequestPayload(BaseModel):
+    asset_id: str
+    action_type: str  # "contain_host", "approve_patch", "override_gate"
+    requested_by: str
+    required_role: str = "SecurityApprover"
+    evidence_data: Optional[Dict[str, Any]] = None
+
+class ApprovalResponsePayload(BaseModel):
+    action: str  # "approve" | "reject"
+    approver: str
+    role: str = "SecurityApprover"
+    notes: str
+    second_approver: Optional[str] = None
+
+class MessagePayload(BaseModel):
+    sender: str
+    role: str
+    content: str
+
+@router.post("/approvals/request")
+def create_approval_request(payload: ApprovalRequestPayload):
+    mgr = ApprovalsManager.get_instance()
+    req = mgr.create_request(
+        asset_id=payload.asset_id,
+        action_type=payload.action_type,
+        requested_by=payload.requested_by,
+        required_role=payload.required_role,
+        evidence_data=payload.evidence_data or {"asset_id": payload.asset_id}
+    )
+    return req.to_dict()
+
+@router.post("/approvals/{request_id}/respond")
+def respond_approval_request(request_id: str, payload: ApprovalResponsePayload):
+    mgr = ApprovalsManager.get_instance()
+    req = mgr.respond_request(
+        request_id=request_id,
+        action=payload.action,
+        approver=payload.approver,
+        role=payload.role,
+        notes=payload.notes,
+        second_approver=payload.second_approver
+    )
+    if not req:
+        raise HTTPException(status_code=404, detail=f"Approval request {request_id} not found")
+    return req.to_dict()
+
+@router.get("/approvals/{asset_id}/requests")
+def list_asset_approvals(asset_id: str):
+    mgr = ApprovalsManager.get_instance()
+    return mgr.list_requests_for_asset(asset_id)
+
+@router.get("/approvals/{asset_id}/messages")
+def get_asset_messages(asset_id: str):
+    mgr = ApprovalsManager.get_instance()
+    return mgr.get_messages_for_asset(asset_id)
+
+@router.post("/approvals/{asset_id}/messages")
+def post_asset_message(asset_id: str, payload: MessagePayload):
+    mgr = ApprovalsManager.get_instance()
+    msg = mgr.add_message(
+        asset_id=asset_id,
+        sender=payload.sender,
+        role=payload.role,
+        content=payload.content
+    )
+    return msg.to_dict()
 
 # ==================== PLAYBOOK & RECHECK ====================
 class PlaybookStepUpdatePayload(BaseModel):

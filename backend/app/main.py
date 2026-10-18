@@ -21,22 +21,19 @@ app = FastAPI(
         "Provides deterministic DuckDB columnar forensics, RFC 8785 JSON canonicalization, "
         "Ed25519 cryptographic proof packs, and immutable SHA-256 audit ledger chaining."
     ),
-    version="3.4.1-enterprise",
+    version=settings.VERSION,
     docs_url="/docs",
     redoc_url="/redoc"
 )
 
 # Enterprise CORS Policy with trusted origin allowlist & method controls
-cors_allowed_raw = os.getenv(
-    "CORS_ALLOWED_ORIGINS",
-    "http://localhost:5173,http://127.0.0.1:5173,http://localhost:8008,http://127.0.0.1:8008"
-)
+cors_allowed_raw = settings.CORS_ALLOWED_ORIGINS
 allowed_origins = [o.strip() for o in cors_allowed_raw.split(",") if o.strip()]
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins if "*" not in allowed_origins else ["*"],
-    allow_origin_regex=r"https?://(localhost|127\.0\.0\.1)(:\d+)?|https://.*\.onrender\.com|https://.*\.vercel\.app",
+    allow_origin_regex=r"^https?://(localhost|127\.0\.0\.1)(:\d+)?$|^https://book-end-pi\.vercel\.app/?$|^https://bookend-pp3k\.onrender\.com/?$",
     allow_credentials=True if "*" not in allowed_origins else False,
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"],
     allow_headers=[
@@ -67,12 +64,16 @@ async def enterprise_security_and_telemetry_middleware(request: Request, call_ne
 
     # Enterprise security & tracking headers (SAMEORIGIN allows browser preview frames)
     response.headers["X-Correlation-ID"] = correlation_id
-    response.headers["X-Server-Node"] = "pg-prod-ap-south-node01.infra.patchguard.internal"
-    response.headers["X-Cluster-Region"] = "ap-south-1"
+    response.headers["X-Server-Node"] = f"{settings.SERVER_NODE_ID}.infra.patchguard.internal"
+    response.headers["X-Cluster-Region"] = settings.CLUSTER_REGION
     response.headers["X-Execution-Time-Ms"] = f"{duration_ms:.2f}"
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-Frame-Options"] = "SAMEORIGIN"
-    response.headers["X-XSS-Protection"] = "1; mode=block"
+    response.headers["Content-Security-Policy"] = (
+        "default-src 'self' 'unsafe-inline' https:; "
+        "img-src 'self' data: https:; "
+        "connect-src 'self' https://bookend-pp3k.onrender.com https://book-end-pi.vercel.app http://localhost:* http://127.0.0.1:* ws: wss:;"
+    )
 
     # Log to in-memory server telemetry buffer
     if not request.url.path.startswith("/docs") and not request.url.path.startswith("/openapi"):
@@ -96,16 +97,16 @@ def root():
         "app": settings.APP_NAME,
         "enterprise_name": "PatchGuard Enterprise Core",
         "tagline": settings.TAGLINE,
-        "version": "3.4.1-enterprise",
-        "node_id": "pg-prod-ap-south-node01",
-        "region": "ap-south-1",
+        "version": settings.VERSION,
+        "node_id": settings.SERVER_NODE_ID,
+        "region": settings.CLUSTER_REGION,
         "docs": "/docs",
         "redoc": "/redoc",
         "metrics": "/metrics",
         "telemetry": "/v1/system/server-status",
         "simulated_data": settings.SIMULATED_BANNER,
         "simulated_range": "Range-Lite 90 Nodes (DuckDB Columnar)",
-        "compliance": ["SOC2 Type II", "FedRAMP High", "RBI CSF", "CERT-In 6-Hour"]
+        "compliance": ["SOC2 Type II", "FedRAMP High (Simulated)", "RBI CSF", "CERT-In 6-Hour"]
     }
 
 @app.api_route("/health", methods=["GET", "HEAD"])
@@ -116,14 +117,15 @@ def health():
     return {
         "status": "healthy",
         "service": "patchguard-core-enterprise",
-        "version": "3.4.1-enterprise",
-        "node_id": "pg-prod-ap-south-node01",
+        "version": settings.VERSION,
+        "node_id": settings.SERVER_NODE_ID,
         "uptime_seconds": status_data["server"]["uptime_seconds"],
+        "simulated": True,
         "checks": {
-            "duckdb_engine": {"status": "up", "latency_ms": 0.38, "indexed_vectors": 25480},
+            "duckdb_engine": {"status": "up", "latency_ms": 0.38, "indexed_vectors": 25480, "note": "simulated benchmarks"},
             "ed25519_hsm_notary": {"status": "up", "token": "YubiHSM2-FIPS-140-3-Active"},
             "audit_ledger": {"status": "up", "integrity": "100% Verified", "algorithm": "SHA-256"},
-            "telemetry_adapters": {"status": "up", "active": 4, "total_eps": 16670},
+            "telemetry_adapters": {"status": "up", "active": 4, "total_eps": 16670, "note": "simulated EPS throughput"},
             "air_gap_boundary": {"status": "enforced", "egress_blocked": True}
         }
     }
