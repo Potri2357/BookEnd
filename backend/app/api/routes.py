@@ -44,6 +44,7 @@ _cached_verdicts: Dict[str, Any] = {}
 _cached_gates: Dict[str, Any] = {}
 _cached_stories: Dict[str, Any] = {}
 _approved_assets: set = set()
+_contained_assets: set = set()
 _simulate_s5_persistence_flag: bool = True
 
 def get_sim():
@@ -211,6 +212,7 @@ def get_decision_queue(tenant_id: Optional[str] = None):
     for a in matched_assets:
         story = evaluate_asset_pipeline(a)
         is_approved = (a.id in _approved_assets or a.host_name in _approved_assets)
+        is_contained = (a.id in _contained_assets or a.host_name in _contained_assets)
         queue_items.append({
             "asset_id": a.id,
             "host_name": a.host_name,
@@ -220,12 +222,13 @@ def get_decision_queue(tenant_id: Optional[str] = None):
             "verdict_state": story["verdict"].state,
             "confidence": story["verdict"].confidence,
             "coverage_score": story["coverage"].overall_coverage,
-            "gate_outcome": "Approved & Released" if is_approved else story["gate"].outcome,
+            "gate_outcome": "Approved & Released" if is_approved else ("Contained & Isolated" if is_contained else story["gate"].outcome),
             "gate_locked": False if is_approved else story["gate"].gate_locked,
             "seconds_remaining": story["clock"].seconds_remaining,
             "is_breached": story["clock"].is_breached,
-            "status": "approved" if is_approved else a.status,
-            "is_approved": is_approved
+            "status": "approved" if is_approved else ("contained" if is_contained else a.status),
+            "is_approved": is_approved,
+            "is_contained": is_contained
         })
 
     # Sort queue: Emergency tiers first, shortest deadline seconds first
@@ -349,6 +352,29 @@ def approve_single_asset(payload: Dict[str, Any], request: Request):
         actor=approver,
         role=role,
         action="APPROVE_PATCH_NOW",
+        object_id=target_asset.id,
+        details={"asset_id": target_asset.id, "host_name": target_asset.host_name}
+    )
+    return {"status": "success", "asset_id": target_asset.id, "host_name": target_asset.host_name}
+
+@router.post("/decisions/contain-asset")
+def contain_single_asset(payload: Dict[str, Any], request: Request):
+    sim = get_sim()
+    approver = payload.get("approver", "lead_approver@postern.local")
+    role = request.headers.get("X-Approver-Role", "SecurityApprover")
+    asset_id = payload.get("asset_id", "")
+    
+    target_asset = next((a for a in sim.assets if a.id == asset_id or a.host_name == asset_id), None)
+    if not target_asset:
+        raise HTTPException(status_code=404, detail="Asset not found")
+        
+    _contained_assets.add(target_asset.id)
+    _contained_assets.add(target_asset.host_name)
+    
+    AuditLedger.get_ledger().append(
+        actor=approver,
+        role=role,
+        action="CONTAIN_HOST_QUARANTINE",
         object_id=target_asset.id,
         details={"asset_id": target_asset.id, "host_name": target_asset.host_name}
     )
@@ -632,7 +658,7 @@ def toggle_s5_persistence():
 
 @router.post("/demo/reset")
 def reset_demo():
-    global _cached_hunt_spec, _cached_playbooks, _cached_verdicts, _cached_gates, _cached_stories, _simulate_s5_persistence_flag, _approved_assets
+    global _cached_hunt_spec, _cached_playbooks, _cached_verdicts, _cached_gates, _cached_stories, _simulate_s5_persistence_flag, _approved_assets, _contained_assets
     sim = get_sim()
     sim.populate_all(seed=42)
     _cached_hunt_spec = None
@@ -641,6 +667,7 @@ def reset_demo():
     _cached_gates = {}
     _cached_stories = {}
     _approved_assets = set()
+    _contained_assets = set()
     _simulate_s5_persistence_flag = True
     AuditLedger.get_ledger().reset()
     return {"status": "success", "message": "Demo reset to initial baseline state completed in <1s"}

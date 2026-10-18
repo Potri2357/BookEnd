@@ -213,6 +213,9 @@ export interface QueueItem {
   is_breached: boolean
   status: string
   is_approved?: boolean
+  is_contained?: boolean
+  is_audited?: boolean
+  is_reviewed?: boolean
 }
 
 export interface ProofPackManifest {

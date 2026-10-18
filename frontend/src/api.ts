@@ -78,18 +78,75 @@ export async function fetchTenants(): Promise<Tenant[]> {
   }
 }
 
+function getStoredSet(key: string): Set<string> {
+  if (typeof window === 'undefined') return new Set()
+  try {
+    const raw = localStorage.getItem(key)
+    return raw ? new Set(JSON.parse(raw)) : new Set()
+  } catch {
+    return new Set()
+  }
+}
+
+function addToStoredSet(key: string, id: string) {
+  if (typeof window === 'undefined') return
+  try {
+    const s = getStoredSet(key)
+    s.add(id)
+    localStorage.setItem(key, JSON.stringify(Array.from(s)))
+  } catch (e) {
+    console.warn(`Failed to save to ${key}:`, e)
+  }
+}
+
+function addManyToStoredSet(key: string, ids: string[]) {
+  if (typeof window === 'undefined') return
+  try {
+    const s = getStoredSet(key)
+    ids.forEach((id) => s.add(id))
+    localStorage.setItem(key, JSON.stringify(Array.from(s)))
+  } catch (e) {
+    console.warn(`Failed to save to ${key}:`, e)
+  }
+}
+
 export async function fetchQueue(tenantId?: string): Promise<QueueItem[]> {
   const query = tenantId && tenantId !== 'all' ? `?tenant_id=${encodeURIComponent(tenantId)}` : ''
+  let items: QueueItem[] = []
   try {
-    return await apiRequest<QueueItem[]>(`/queue${query}`)
+    items = await apiRequest<QueueItem[]>(`/queue${query}`)
   } catch (e) {
     console.warn('Backend unavailable during cold-start, using air-gapped queue:', e)
     let q = FALLBACK_QUEUE
     if (tenantId && tenantId !== 'all') {
       q = q.filter((item: any) => item.tenant_id === tenantId)
     }
-    return q
+    items = q
   }
+
+  // Hydrate with local user actions so that approved and contained marks stay persistent
+  const approvedSet = getStoredSet('postern_approved_assets')
+  const containedSet = getStoredSet('postern_contained_assets')
+  const auditedSet = getStoredSet('postern_audited_assets')
+  const reviewedSet = getStoredSet('postern_reviewed_assets')
+
+  return items.map((item) => {
+    const isApproved = !!item.is_approved || approvedSet.has(item.asset_id) || approvedSet.has(item.host_name)
+    const isContained = !!item.is_contained || containedSet.has(item.asset_id) || containedSet.has(item.host_name)
+    const isAudited = !!item.is_audited || auditedSet.has(item.asset_id) || auditedSet.has(item.host_name)
+    const isReviewed = !!item.is_reviewed || reviewedSet.has(item.asset_id) || reviewedSet.has(item.host_name)
+
+    return {
+      ...item,
+      is_approved: isApproved,
+      is_contained: isContained,
+      is_audited: isAudited,
+      is_reviewed: isReviewed,
+      gate_outcome: isApproved ? 'Approved & Released' : (isContained ? 'Contained & Isolated' : item.gate_outcome),
+      gate_locked: isApproved ? false : item.gate_locked,
+      status: isApproved ? 'approved' : (isContained ? 'contained' : item.status)
+    }
+  })
 }
 
 export async function fetchAssetStory(assetId: string): Promise<AssetStory> {
@@ -151,12 +208,16 @@ export async function approveSingleAsset(
   assetId: string,
   approver: string = 'security_lead@postern.enterprise'
 ): Promise<{ status: string; asset_id: string }> {
+  // Store persistently so mark remains across reloads
+  addToStoredSet('postern_approved_assets', assetId)
+
   // Update local offline memory immediately
   for (const item of FALLBACK_QUEUE) {
     if (item.asset_id === assetId || item.host_name === assetId) {
       item.gate_outcome = 'Approved & Released'
       item.gate_locked = false
       item.is_approved = true
+      item.status = 'approved'
     }
   }
   const story = FALLBACK_STORIES[assetId] || Object.values(FALLBACK_STORIES).find(
@@ -184,6 +245,62 @@ export async function approveSingleAsset(
   }
 }
 
+export async function containSingleAsset(
+  assetId: string,
+  approver: string = 'security_lead@postern.enterprise'
+): Promise<{ status: string; asset_id: string }> {
+  // Store persistently so mark remains across reloads
+  addToStoredSet('postern_contained_assets', assetId)
+
+  // Update local offline memory immediately
+  for (const item of FALLBACK_QUEUE) {
+    if (item.asset_id === assetId || item.host_name === assetId) {
+      item.is_contained = true
+      item.status = 'contained'
+      item.gate_outcome = 'Contained & Isolated'
+    }
+  }
+  const story = FALLBACK_STORIES[assetId] || Object.values(FALLBACK_STORIES).find(
+    (s: any) => s.asset?.host_name === assetId || s.asset?.id === assetId
+  )
+  if (story) {
+    story.is_contained = true
+    if (story.gate) story.gate.outcome = 'Contained & Isolated'
+  }
+
+  try {
+    return await apiRequest<{ status: string; asset_id: string }>(
+      '/decisions/contain-asset',
+      {
+        method: 'POST',
+        body: JSON.stringify({ asset_id: assetId, approver })
+      },
+      5000
+    )
+  } catch (e) {
+    console.warn('Network timeout during containment, local containment applied:', e)
+    return { status: 'contained_offline', asset_id: assetId }
+  }
+}
+
+export async function auditSingleAsset(assetId: string): Promise<void> {
+  addToStoredSet('postern_audited_assets', assetId)
+  for (const item of FALLBACK_QUEUE) {
+    if (item.asset_id === assetId || item.host_name === assetId) {
+      item.is_audited = true
+    }
+  }
+}
+
+export async function reviewSingleAsset(assetId: string): Promise<void> {
+  addToStoredSet('postern_reviewed_assets', assetId)
+  for (const item of FALLBACK_QUEUE) {
+    if (item.asset_id === assetId || item.host_name === assetId) {
+      item.is_reviewed = true
+    }
+  }
+}
+
 export async function fetchAdvisory(advisoryId: string): Promise<Advisory> {
   try {
     return await apiRequest<Advisory>(`/advisories/${encodeURIComponent(advisoryId)}`)
@@ -198,6 +315,7 @@ export async function fetchAdvisory(advisoryId: string): Promise<Advisory> {
 }
 
 export async function overrideGate(assetId: string, approver: string, reason: string) {
+  addToStoredSet('postern_approved_assets', assetId)
   // Update local offline state immediately
   for (const item of FALLBACK_QUEUE) {
     if (item.asset_id === assetId || item.host_name === assetId) {
@@ -239,8 +357,11 @@ export async function bulkApprovePatchNow(approver: string) {
       item.is_approved = true
       approvedCount++
       approvedList.push(item.asset_id)
+      approvedList.push(item.host_name)
     }
   }
+  addManyToStoredSet('postern_approved_assets', approvedList)
+
   for (const s of Object.values(FALLBACK_STORIES)) {
     if (s.verdict?.state === 'No evidence found' && s.gate) {
       s.gate.status = 'approved'

@@ -239,6 +239,23 @@ def test_bulk_approve_endpoint(client):
     assert data["status"] == "success"
     assert data["approved_count"] >= 1
 
+def test_contain_single_asset_endpoint(client):
+    res = client.post("/v1/decisions/contain-asset", json={
+        "asset_id": "ASSET-MERIDIAN-001",
+        "approver": "sec_lead@enterprise.local"
+    })
+    assert res.status_code == 200
+    data = res.json()
+    assert data["status"] == "success"
+    assert data["asset_id"] == "ASSET-MERIDIAN-001"
+
+    # Verify queue reflects containment
+    q_res = client.get("/v1/queue")
+    assert q_res.status_code == 200
+    item = next((i for i in q_res.json() if i["asset_id"] == "ASSET-MERIDIAN-001"), None)
+    assert item is not None
+    assert item["is_contained"] is True
+
     # Clean up
     client.post("/v1/demo/reset")
 

@@ -14,6 +14,9 @@ interface DecisionQueueViewProps {
   onSelectAsset: (assetId: string) => void
   onBulkApprove: () => void
   onApproveSingleAsset?: (item: QueueItem) => void
+  onContainAsset?: (item: QueueItem) => void
+  onAuditAsset?: (item: QueueItem) => void
+  onReviewAsset?: (item: QueueItem) => void
   isBulkApproving: boolean
   selectedTenant: string
   isLoading?: boolean
@@ -24,6 +27,9 @@ export const DecisionQueueView: React.FC<DecisionQueueViewProps> = ({
   onSelectAsset,
   onBulkApprove,
   onApproveSingleAsset,
+  onContainAsset,
+  onAuditAsset,
+  onReviewAsset,
   isBulkApproving,
   selectedTenant,
   isLoading = false
@@ -161,8 +167,12 @@ export const DecisionQueueView: React.FC<DecisionQueueViewProps> = ({
             title="Click to inspect verified clean proof"
             className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#D1FAE5] text-[#047857] border border-[#A7F3D0] font-mono hover:border-[#047857] transition cursor-pointer group"
           >
-            <span className="w-1.5 h-1.5 rounded-full bg-[#059669]" />
-            <span>{item.is_approved ? 'Approved & Released' : 'No Evidence Found'}</span>
+            {item.is_approved ? (
+              <CheckCheck className="w-3.5 h-3.5 text-[#047857]" />
+            ) : (
+              <span className="w-1.5 h-1.5 rounded-full bg-[#059669]" />
+            )}
+            <span>{item.is_approved ? '✓ Approved & Released' : 'No Evidence Found'}</span>
             <HelpCircle className="w-3 h-3 text-[#047857]/70 group-hover:text-[#047857]" />
           </button>
         )
@@ -200,11 +210,26 @@ export const DecisionQueueView: React.FC<DecisionQueueViewProps> = ({
             e.stopPropagation()
             onSelectAsset(item.host_name)
           }}
-          className="chip-btn bg-[#D1FAE5] text-[#047857] border-[#A7F3D0] hover:bg-[#A7F3D0]/40 text-xs font-semibold"
+          className="chip-btn bg-[#D1FAE5] text-[#047857] border-[#A7F3D0] hover:bg-[#A7F3D0]/40 text-xs font-bold inline-flex items-center gap-1.5 shadow-2xs"
           title="Asset patch gate approved and released. Click to view story."
         >
-          <CheckCheck className="w-3.5 h-3.5 text-[#047857]" />
-          <span>Approved & Released</span>
+          <CheckCheck className="w-4 h-4 text-[#047857]" />
+          <span>✓ Approved & Released</span>
+        </button>
+      )
+    }
+    if (item.is_contained) {
+      return (
+        <button
+          onClick={(e) => {
+            e.stopPropagation()
+            onSelectAsset(item.host_name)
+          }}
+          className="chip-btn bg-[#FEF3C7] text-[#B45309] border-[#FDE68A] hover:bg-[#FDE68A]/40 text-xs font-bold inline-flex items-center gap-1.5 shadow-2xs"
+          title="Asset quarantined to isolated VLAN. Click to view story."
+        >
+          <ShieldCheck className="w-4 h-4 text-[#B45309]" />
+          <span>✓ Contained & Isolated</span>
         </button>
       )
     }
@@ -213,12 +238,34 @@ export const DecisionQueueView: React.FC<DecisionQueueViewProps> = ({
         <button
           onClick={(e) => {
             e.stopPropagation()
-            onSelectAsset(item.host_name)
+            if (onContainAsset) {
+              onContainAsset(item)
+              setToastNotification(`Host ${item.host_name} quarantined to isolated VLAN. Egress traffic blocked.`)
+              setTimeout(() => setToastNotification(null), 5000)
+            } else {
+              onSelectAsset(item.host_name)
+            }
           }}
-          className="chip-btn chip-btn-emergency text-xs"
+          className="chip-btn chip-btn-emergency text-xs shadow-xs hover:shadow-md transition active:scale-95"
+          title="Quarantine compromised host to isolated network"
         >
           <ShieldAlert className="w-3.5 h-3.5" />
           <span>Contain Asset</span>
+        </button>
+      )
+    }
+    if (item.is_audited) {
+      return (
+        <button
+          onClick={(e) => {
+            e.stopPropagation()
+            onSelectAsset(item.host_name)
+          }}
+          className="chip-btn bg-[#E6EEF7] text-[#1D63ED] border-[#BFDBFE] hover:bg-[#BFDBFE]/40 text-xs font-bold inline-flex items-center gap-1.5 shadow-2xs"
+          title="Retention blind spot audited. Click to view story."
+        >
+          <Check className="w-4 h-4 text-[#1D63ED]" />
+          <span>✓ Gap Audited</span>
         </button>
       )
     }
@@ -227,12 +274,32 @@ export const DecisionQueueView: React.FC<DecisionQueueViewProps> = ({
         <button
           onClick={(e) => {
             e.stopPropagation()
+            if (onAuditAsset) {
+              onAuditAsset(item)
+              setToastNotification(`Retention blind spot audit recorded for ${item.host_name}.`)
+              setTimeout(() => setToastNotification(null), 5000)
+            }
             onSelectAsset(item.host_name)
           }}
-          className="chip-btn chip-btn-secondary text-[#1D63ED] border-[#BFDBFE] hover:bg-[#EBF2FE] text-xs font-semibold"
+          className="chip-btn chip-btn-secondary text-[#1D63ED] border-[#BFDBFE] hover:bg-[#EBF2FE] text-xs font-semibold active:scale-95 transition"
         >
           <Search className="w-3.5 h-3.5 text-[#1D63ED]" />
           <span>Investigate Gap</span>
+        </button>
+      )
+    }
+    if (item.is_reviewed) {
+      return (
+        <button
+          onClick={(e) => {
+            e.stopPropagation()
+            onSelectAsset(item.host_name)
+          }}
+          className="chip-btn bg-[#FEF3C7] text-[#B45309] border-[#FDE68A] hover:bg-[#FDE68A]/40 text-xs font-bold inline-flex items-center gap-1.5 shadow-2xs"
+          title="Suspicious evidence reviewed. Click to view story."
+        >
+          <Check className="w-4 h-4 text-[#B45309]" />
+          <span>✓ Evidence Reviewed</span>
         </button>
       )
     }
@@ -241,9 +308,14 @@ export const DecisionQueueView: React.FC<DecisionQueueViewProps> = ({
         <button
           onClick={(e) => {
             e.stopPropagation()
+            if (onReviewAsset) {
+              onReviewAsset(item)
+              setToastNotification(`Suspicious evidence reviewed and acknowledged for ${item.host_name}.`)
+              setTimeout(() => setToastNotification(null), 5000)
+            }
             onSelectAsset(item.host_name)
           }}
-          className="chip-btn chip-btn-warning text-xs"
+          className="chip-btn chip-btn-warning text-xs active:scale-95 transition"
         >
           <AlertTriangle className="w-3.5 h-3.5" />
           <span>Review Evidence</span>
@@ -370,8 +442,16 @@ export const DecisionQueueView: React.FC<DecisionQueueViewProps> = ({
               <ShieldCheck className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-3xl font-black font-sans tracking-tight text-[#047857] mt-2">
-            {safeCount}
+          <div className="flex items-baseline gap-2 mt-2">
+            <span className="text-3xl font-black font-sans tracking-tight text-[#047857]">
+              {safeCount}
+            </span>
+            {alreadyApprovedCount > 0 && (
+              <span className="inline-flex items-center gap-1 text-[11px] font-mono font-bold text-[#047857] bg-[#D1FAE5] px-2 py-0.5 rounded-full border border-[#A7F3D0]">
+                <CheckCheck className="w-3.5 h-3.5 text-[#047857]" />
+                <span>{alreadyApprovedCount} Approved</span>
+              </span>
+            )}
           </div>
           <p className="text-[11px] text-[#475569] mt-1 font-sans">
             Zero IOCs across complete 45-day lookback
@@ -662,11 +742,39 @@ export const DecisionQueueView: React.FC<DecisionQueueViewProps> = ({
                       {/* Asset & Organisation */}
                       <td className="py-3.5 px-4">
                         <div className="flex items-center gap-3">
-                          <div className={`w-1 h-10 rounded-full shrink-0 ${isComp ? 'bg-[#DC2626]' : item.verdict_state === 'Cannot verify' ? 'bg-[#1D63ED]' : 'bg-[#059669]'
-                            }`} />
+                          <div className={`w-1 h-10 rounded-full shrink-0 ${
+                            item.is_approved ? 'bg-[#059669]' :
+                            item.is_contained ? 'bg-[#D97706]' :
+                            isComp ? 'bg-[#DC2626]' :
+                            item.verdict_state === 'Cannot verify' ? 'bg-[#1D63ED]' : 'bg-[#059669]'
+                          }`} />
                           <div className="min-w-0">
                             <div className="font-bold text-[#0F172A] font-mono text-[13px] flex items-center gap-2 group-hover:text-[#1D63ED] transition truncate">
                               <span className="truncate">{item.host_name}</span>
+                              {item.is_approved && (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[#D1FAE5] text-[#047857] border border-[#A7F3D0] shadow-2xs shrink-0 animate-in fade-in duration-150">
+                                  <CheckCheck className="w-3 h-3 text-[#047857]" />
+                                  <span>Approved</span>
+                                </span>
+                              )}
+                              {item.is_contained && (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[#FEF3C7] text-[#B45309] border border-[#FDE68A] shadow-2xs shrink-0 animate-in fade-in duration-150">
+                                  <ShieldCheck className="w-3 h-3 text-[#B45309]" />
+                                  <span>Contained</span>
+                                </span>
+                              )}
+                              {item.is_audited && (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[#E6EEF7] text-[#1D63ED] border border-[#BFDBFE] shadow-2xs shrink-0 animate-in fade-in duration-150">
+                                  <Check className="w-3 h-3 text-[#1D63ED]" />
+                                  <span>Audited</span>
+                                </span>
+                              )}
+                              {item.is_reviewed && (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[#FEF3C7] text-[#B45309] border border-[#FDE68A] shadow-2xs shrink-0 animate-in fade-in duration-150">
+                                  <Check className="w-3 h-3 text-[#B45309]" />
+                                  <span>Reviewed</span>
+                                </span>
+                              )}
                               {item.status === 'needs_inventory' && (
                                 <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-[#FEF3C7] text-[#B45309] font-mono font-bold shrink-0">
                                   Unknown Version

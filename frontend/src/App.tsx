@@ -10,7 +10,8 @@ import { AuditLedgerView } from './components/AuditLedgerView'
 import { ServerConsoleView } from './components/ServerConsoleView'
 import {
   fetchTenants, fetchQueue, fetchAssetStory, fetchAdvisory,
-  bulkApprovePatchNow, approveSingleAsset, resetDemo, togglePersistence, BASE_URL
+  bulkApprovePatchNow, approveSingleAsset, containSingleAsset,
+  auditSingleAsset, reviewSingleAsset, resetDemo, togglePersistence, BASE_URL
 } from './api'
 import { Tenant, QueueItem, AssetStory, Advisory } from './types'
 
@@ -183,6 +184,46 @@ export function App() {
     }
   }
 
+  const handleContainAsset = async (item: QueueItem) => {
+    // 0ms Optimistic UI update
+    setQueue((prevQueue) =>
+      prevQueue.map((q) =>
+        q.asset_id === item.asset_id || q.host_name === item.host_name
+          ? { ...q, is_contained: true, status: 'contained', gate_outcome: 'Contained & Isolated' }
+          : q
+      )
+    )
+
+    try {
+      await containSingleAsset(item.asset_id)
+      await loadQueue()
+    } catch (e) {
+      console.warn('Backend sync deferred for containment:', e)
+    }
+  }
+
+  const handleAuditAsset = async (item: QueueItem) => {
+    setQueue((prevQueue) =>
+      prevQueue.map((q) =>
+        q.asset_id === item.asset_id || q.host_name === item.host_name
+          ? { ...q, is_audited: true }
+          : q
+      )
+    )
+    await auditSingleAsset(item.asset_id)
+  }
+
+  const handleReviewAsset = async (item: QueueItem) => {
+    setQueue((prevQueue) =>
+      prevQueue.map((q) =>
+        q.asset_id === item.asset_id || q.host_name === item.host_name
+          ? { ...q, is_reviewed: true }
+          : q
+      )
+    )
+    await reviewSingleAsset(item.asset_id)
+  }
+
   const handleTogglePersistence = async () => {
     try {
       const res = await togglePersistence()
@@ -261,6 +302,9 @@ export function App() {
             onSelectAsset={handleSelectAsset}
             onBulkApprove={handleBulkApprove}
             onApproveSingleAsset={handleApproveSingleAsset}
+            onContainAsset={handleContainAsset}
+            onAuditAsset={handleAuditAsset}
+            onReviewAsset={handleReviewAsset}
             isBulkApproving={isBulkApproving}
             selectedTenant={selectedTenant}
             isLoading={isLoadingQueue}
