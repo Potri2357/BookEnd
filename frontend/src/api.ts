@@ -3,7 +3,15 @@ import {
   ProofPack, QueueItem, Tenant
 } from './types'
 
-const BASE_URL = (import.meta.env.VITE_API_BASE_URL || '/v1').replace(/\/+$/, '')
+function normalizeApiBaseUrl(): string {
+  let url = (import.meta.env.VITE_API_BASE_URL || '/v1').trim().replace(/\/+$/, '')
+  if (url.startsWith('http') && !url.endsWith('/v1')) {
+    url = `${url}/v1`
+  }
+  return url
+}
+
+export const BASE_URL = normalizeApiBaseUrl()
 
 /**
  * Robust enterprise API client helper with standardized error handling and status code validation.

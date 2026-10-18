@@ -10,7 +10,7 @@ import { AuditLedgerView } from './components/AuditLedgerView'
 import { ServerConsoleView } from './components/ServerConsoleView'
 import {
   fetchTenants, fetchQueue, fetchAssetStory, fetchAdvisory,
-  bulkApprovePatchNow, resetDemo, togglePersistence
+  bulkApprovePatchNow, resetDemo, togglePersistence, BASE_URL
 } from './api'
 import { Tenant, QueueItem, AssetStory, Advisory } from './types'
 
@@ -40,8 +40,7 @@ export function App() {
 
   // Setup Server-Sent Events (SSE) for real-time live clock updates
   useEffect(() => {
-    const apiBase = (import.meta.env.VITE_API_BASE_URL || '/v1').replace(/\/+$/, '')
-    const eventSource = new EventSource(`${apiBase}/events`)
+    const eventSource = new EventSource(`${BASE_URL}/events`)
     eventSource.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data)
