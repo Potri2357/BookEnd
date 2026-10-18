@@ -5,7 +5,7 @@ Compares before/after states. Only marks asset 'closed' if all verification chec
 Reopens the asset with explicit failure reasons if residue persists (Scenario S5).
 """
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 from app.core.audit import AuditLedger
 from app.models.schemas import Asset, Playbook
 
