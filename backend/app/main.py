@@ -7,6 +7,7 @@ import os
 import time
 import uuid
 from datetime import datetime, timezone
+import asyncio
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
@@ -17,16 +18,19 @@ from app.core.server_telemetry import ServerTelemetryManager
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Pre-warm RangeLiteSimulator and pre-compute queue stories
-    # so first-time requests on low-CPU instances (e.g. Render free tier 0.1 CPU) are instantaneous (<50ms).
-    try:
-        from app.simulator.range_lite import RangeLiteSimulator
-        from app.api.routes import get_decision_queue
-        RangeLiteSimulator.get_instance()
-        get_decision_queue()
-    except Exception as e:
-        import logging
-        logging.error(f"Error during simulator warm-up: {e}")
+    # Yield IMMEDIATELY so Uvicorn binds to 0.0.0.0:$PORT in <0.1 seconds.
+    # Render's port scanner will immediately detect the open port and mark the service healthy.
+    async def _async_warmup():
+        try:
+            from app.simulator.range_lite import RangeLiteSimulator
+            from app.api.routes import get_decision_queue
+            await asyncio.to_thread(RangeLiteSimulator.get_instance)
+            await asyncio.to_thread(get_decision_queue)
+        except Exception as e:
+            import logging
+            logging.warning(f"Background simulator warm-up: {e}")
+
+    asyncio.create_task(_async_warmup())
     yield
 
 app = FastAPI(

@@ -6,7 +6,7 @@ services:
     region: oregon
     plan: free
     buildCommand: pip install -r requirements.txt
-    startCommand: python -m uvicorn app.main:app --host 0.0.0.0 --port $PORT --app-dir backend
+    startCommand: python backend/server.py
     healthCheckPath: /health
     envVars:
       - key: PYTHON_VERSION
