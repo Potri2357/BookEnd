@@ -32,9 +32,12 @@ from app.models.schemas import Advisory, Asset, ProofPack
 from app.simulator.range_lite import RangeLiteSimulator, TENANTS_DATA
 from app.core.server_telemetry import ServerTelemetryManager
 
+import threading
+
 router = APIRouter()
 
 # Global state / caches
+_pipeline_lock = threading.RLock()
 _cached_hunt_spec = None
 _cached_playbooks: Dict[str, Any] = {}
 _cached_verdicts: Dict[str, Any] = {}
@@ -55,12 +58,13 @@ def get_or_create_hunt_spec():
 
 def evaluate_asset_pipeline(asset: Asset, force_refresh: bool = False) -> Dict[str, Any]:
     """Runs complete end-to-end forensic analysis for a single asset or returns cached decision."""
-    sim = get_sim()
-    if not force_refresh and asset.id in _cached_stories:
-        cached = _cached_stories[asset.id]
-        # Refresh real-time clock without running full DuckDB hunts and audit writes
-        cached["clock"] = ClockManager.get_instance().initialize_clock_for_asset(asset, sim.advisory.id)
-        return cached
+    with _pipeline_lock:
+        sim = get_sim()
+        if not force_refresh and asset.id in _cached_stories:
+            cached = _cached_stories[asset.id]
+            # Refresh real-time clock without running full DuckDB hunts and audit writes
+            cached["clock"] = ClockManager.get_instance().initialize_clock_for_asset(asset, sim.advisory.id)
+            return cached
 
     spec = get_or_create_hunt_spec()
     evidence = execute_hunts_for_asset(sim.con, asset, spec)

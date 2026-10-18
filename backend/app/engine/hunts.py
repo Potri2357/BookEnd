@@ -119,9 +119,13 @@ def execute_hunts_for_asset(
             continue
 
         try:
-            cursor = simulator_con.execute(hyp.query_template, [asset.host_name])
-            rows = cursor.fetchall()
-            cols = [desc[0] for desc in cursor.description]
+            cursor = simulator_con.cursor()
+            try:
+                res = cursor.execute(hyp.query_template, [asset.host_name])
+                rows = res.fetchall()
+                cols = [desc[0] for desc in res.description]
+            finally:
+                cursor.close()
 
             for row in rows:
                 row_dict = {

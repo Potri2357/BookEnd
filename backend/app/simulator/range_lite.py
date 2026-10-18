@@ -34,8 +34,11 @@ TENANTS_DATA = [
     {"id": "lotus-clinics", "name": "Lotus Clinics", "industry": "Healthcare Provider Network", "region": "Bengaluru, India"}
 ]
 
+import threading
+
 class RangeLiteSimulator:
     _instance = None
+    _lock = threading.RLock()
 
     def __init__(self, db_path: str = ":memory:"):
         self.db_path = db_path
@@ -49,7 +52,10 @@ class RangeLiteSimulator:
     @classmethod
     def get_instance(cls) -> "RangeLiteSimulator":
         if cls._instance is None:
-            cls._instance = cls()
+            with cls._lock:
+                if cls._instance is None:
+                    instance = cls()
+                    cls._instance = instance
         return cls._instance
 
     def init_db(self):
@@ -385,7 +391,12 @@ class RangeLiteSimulator:
         self.con.execute("CREATE INDEX IF NOT EXISTS idx_tenant ON telemetry_events(tenant_id)")
 
     def execute_query(self, sql: str, params: Tuple = ()) -> List[Dict[str, Any]]:
-        cursor = self.con.execute(sql, params)
-        cols = [desc[0] for desc in cursor.description]
-        rows = cursor.fetchall()
-        return [dict(zip(cols, row)) for row in rows]
+        with self._lock:
+            cursor = self.con.cursor()
+            try:
+                res = cursor.execute(sql, params)
+                cols = [desc[0] for desc in res.description]
+                rows = res.fetchall()
+                return [dict(zip(cols, row)) for row in rows]
+            finally:
+                cursor.close()

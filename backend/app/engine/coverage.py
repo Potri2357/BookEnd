@@ -31,7 +31,11 @@ def calculate_log_coverage(
         WHERE host_name = ?
         GROUP BY source_type
     """
-    rows = simulator_con.execute(sql, [asset.host_name]).fetchall()
+    cursor = simulator_con.cursor()
+    try:
+        rows = cursor.execute(sql, [asset.host_name]).fetchall()
+    finally:
+        cursor.close()
     source_map = {r[0]: {"min": r[1], "max": r[2], "days": r[3]} for r in rows}
 
     total_ratio_sum = 0.0
