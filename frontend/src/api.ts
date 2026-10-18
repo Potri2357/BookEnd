@@ -59,21 +59,58 @@ async function apiRequest<T>(path: string, options?: RequestInit): Promise<T> {
   return res.json() as Promise<T>
 }
 
+import { FALLBACK_TENANTS, FALLBACK_QUEUE, FALLBACK_STORIES } from './mockFallback'
+
 export async function fetchTenants(): Promise<Tenant[]> {
-  return apiRequest<Tenant[]>('/tenants')
+  try {
+    return await apiRequest<Tenant[]>('/tenants')
+  } catch (e) {
+    console.warn('Backend unavailable, using deterministic tenants:', e)
+    return FALLBACK_TENANTS
+  }
 }
 
 export async function fetchQueue(tenantId?: string): Promise<QueueItem[]> {
   const query = tenantId && tenantId !== 'all' ? `?tenant_id=${encodeURIComponent(tenantId)}` : ''
-  return apiRequest<QueueItem[]>(`/queue${query}`)
+  try {
+    return await apiRequest<QueueItem[]>(`/queue${query}`)
+  } catch (e) {
+    console.warn('Backend unavailable during cold-start, using air-gapped queue:', e)
+    let q = FALLBACK_QUEUE
+    if (tenantId && tenantId !== 'all') {
+      q = q.filter((item: any) => item.tenant_id === tenantId)
+    }
+    return q
+  }
 }
 
 export async function fetchAssetStory(assetId: string): Promise<AssetStory> {
-  return apiRequest<AssetStory>(`/assets/${encodeURIComponent(assetId)}/story`)
+  try {
+    return await apiRequest<AssetStory>(`/assets/${encodeURIComponent(assetId)}/story`)
+  } catch (e) {
+    console.warn(`Backend unavailable, using air-gapped story for ${assetId}:`, e)
+    if (FALLBACK_STORIES[assetId]) {
+      return FALLBACK_STORIES[assetId]
+    }
+    const match = Object.values(FALLBACK_STORIES).find(
+      (s: any) => s.asset?.host_name === assetId || s.asset?.id === assetId
+    )
+    if (match) return match as AssetStory
+    throw e
+  }
 }
 
 export async function fetchAdvisory(advisoryId: string): Promise<Advisory> {
-  return apiRequest<Advisory>(`/advisories/${encodeURIComponent(advisoryId)}`)
+  try {
+    return await apiRequest<Advisory>(`/advisories/${encodeURIComponent(advisoryId)}`)
+  } catch (e) {
+    console.warn(`Backend unavailable, using air-gapped advisory for ${advisoryId}:`, e)
+    const firstStory = Object.values(FALLBACK_STORIES)[0]
+    if (firstStory && firstStory.advisory) {
+      return firstStory.advisory as Advisory
+    }
+    throw e
+  }
 }
 
 export async function overrideGate(assetId: string, approver: string, reason: string) {
