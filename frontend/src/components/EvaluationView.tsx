@@ -104,7 +104,7 @@ export const EvaluationView: React.FC = () => {
           <div>
             <div className="flex items-center gap-2">
               <span className="text-[10px] font-mono px-2 py-0.5 rounded font-bold bg-cyan-950 text-cyan-300 border border-cyan-800 uppercase tracking-wider">
-                PRD SECTIONS 11 & 15
+                EMPIRICAL BENCHMARK CRITERIA
               </span>
               <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-800 flex items-center gap-1 font-semibold">
                 <Award className="w-3 h-3" /> FORMAL AUDIT BENCHMARK
@@ -114,7 +114,7 @@ export const EvaluationView: React.FC = () => {
               Automated Evaluation Harness & Ground Truth Matrix
             </h1>
             <p className="text-xs text-slate-400 font-mono mt-0.5">
-              Continuous validation against PRD target metrics across all 90 synthetic assets in Range Lite.
+              Continuous validation against precision and recall criteria across all 90 synthetic assets in Range Lite.
             </p>
           </div>
 
@@ -218,7 +218,7 @@ export const EvaluationView: React.FC = () => {
             Evaluation Harness Ready for Execution
           </h3>
           <p className="text-xs text-slate-400 max-w-md mx-auto font-mono">
-            Click 'Run Automated Evaluation Harness' above to query ground truth on all 90 synthetic assets and compare against PRD Section 15 acceptance targets.
+            Click 'Run Automated Evaluation Harness' above to query ground truth on all 90 synthetic assets and compare against formal validation criteria.
           </p>
         </div>
       )}

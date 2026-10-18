@@ -63,14 +63,14 @@ export const ConnectorsView: React.FC = () => {
           <div>
             <div className="flex items-center gap-2">
               <span className="text-[10px] font-mono px-2 py-0.5 rounded font-bold bg-cyan-950 text-cyan-300 border border-cyan-800 uppercase tracking-wider">
-                F21 INGESTION ENGINE
+                TELEMETRY INGESTION PIPELINE
               </span>
               <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-800 flex items-center gap-1 font-semibold">
                 <Lock className="w-3 h-3" /> AGENTLESS READ-ONLY ADAPTERS
               </span>
             </div>
             <h1 className="text-xl md:text-2xl font-black text-white mt-1 tracking-tight">
-              SIEM & EDR Ingestion Connectors (F21)
+              SIEM & EDR Ingestion Connectors
             </h1>
             <p className="text-xs text-slate-400 font-mono mt-0.5">
               Read-only adapters collecting endpoint, web, auth, and network telemetry without deploying additional agent software. Automatically discovers retention horizons.
@@ -100,7 +100,7 @@ export const ConnectorsView: React.FC = () => {
           </div>
 
           <div className="p-3 rounded-lg bg-slate-950/80 border border-slate-800/80 space-y-1">
-            <span className="text-slate-400 text-[10px] block">RETENTION DISCOVERY (F6)</span>
+            <span className="text-slate-400 text-[10px] block">RETENTION HORIZON DISCOVERY</span>
             <span className="text-emerald-400 font-bold block">Automatic Horizon Auditing</span>
             <p className="text-[11px] text-slate-500 font-sans">
               Measures oldest verifiable log timestamp to prevent false safety claims on truncated retention pools.
@@ -168,13 +168,13 @@ export const ConnectorsView: React.FC = () => {
         })}
       </div>
 
-      {/* Webhook & ITSM Ticket Integration (F27) */}
+      {/* Webhook & ITSM Ticket Integration */}
       <div className="soc-card p-5 rounded-xl border border-slate-800 space-y-3 font-mono text-xs">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-slate-800 pb-2">
           <div className="flex items-center gap-2">
             <Webhook className="w-4 h-4 text-purple-400" />
             <h3 className="font-bold text-slate-100 text-sm">
-              Signed Webhook Alerts & ITSM Integrations (F27)
+              Signed Webhook Alerts & ITSM Integrations
             </h3>
           </div>
 

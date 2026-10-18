@@ -168,7 +168,7 @@ export const AssetStoryView: React.FC<AssetStoryViewProps> = ({
               className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-mono text-xs font-bold shadow-lg shadow-rose-600/20 transition active:scale-95"
             >
               <FileCheck className="w-3.5 h-3.5" />
-              <span>{isOpeningIncident ? 'Drafting Form...' : 'CERT-In Form IR Draft (F17)'}</span>
+              <span>{isOpeningIncident ? 'Drafting Form...' : 'CERT-In Form IR Notice'}</span>
             </button>
           )}
 
@@ -178,12 +178,12 @@ export const AssetStoryView: React.FC<AssetStoryViewProps> = ({
             className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-[#0c1020] hover:bg-[#12172e] text-cyan-300 border border-cyan-500/30 hover:border-cyan-400 font-mono text-xs font-bold transition active:scale-95 shadow-md shadow-cyan-500/10"
           >
             <ShieldCheck className="w-4 h-4 text-emerald-400" />
-            <span>{isOpeningPack ? 'Loading Certificate...' : 'Cryptographic Proof Pack (F16)'}</span>
+            <span>{isOpeningPack ? 'Loading Certificate...' : 'Ed25519 Cryptographic Proof Pack'}</span>
           </button>
         </div>
       </div>
 
-      {/* Hero Asset Investigation Banner (PRD Section 8.3) */}
+      {/* Hero Asset Investigation Banner */}
       <div className={`p-5 rounded-2xl soc-card-elevated border transition ${
         isComp
           ? 'border-rose-500/50 glow-crimson'
@@ -538,7 +538,7 @@ export const AssetStoryView: React.FC<AssetStoryViewProps> = ({
               <div className="flex items-center justify-between border-b border-white/[0.08] pb-3">
                 <div>
                   <h3 className="font-bold text-slate-100 flex items-center gap-2 text-sm">
-                    <Shield className="w-4 h-4 text-cyan-400" /> Containment & Residue Playbook (F9)
+                    <Shield className="w-4 h-4 text-cyan-400" /> Containment & Remediation Playbook
                   </h3>
                   <p className="text-[11px] text-slate-400 mt-0.5 font-sans">
                     Guarantees execution of hygiene actions (session termination, implant removal) that patching alone leaves behind.
@@ -662,11 +662,11 @@ export const AssetStoryView: React.FC<AssetStoryViewProps> = ({
             )}
           </div>
 
-          {/* Ask-The-Evidence Assistant (F14) */}
+          {/* Ask-The-Evidence Assistant */}
           <div className="soc-card-elevated p-4 rounded-2xl border border-white/[0.08] space-y-3 font-mono text-xs">
             <div className="flex items-center justify-between border-b border-white/[0.06] pb-2">
               <h3 className="font-bold text-cyan-300 flex items-center gap-2">
-                <MessageSquare className="w-4 h-4" /> Evidence Assistant (F14)
+                <MessageSquare className="w-4 h-4" /> Forensic Evidence Assistant
               </h3>
               <span className="text-[9px] px-1.5 py-0.2 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">
                 Injection Shielded
@@ -741,7 +741,7 @@ export const AssetStoryView: React.FC<AssetStoryViewProps> = ({
         </div>
       </div>
 
-      {/* Bottom Gated Execution Pipeline (PRD Section 8.3 & F8/F10) */}
+      {/* Bottom Gated Execution Pipeline */}
       <div className="soc-card-elevated p-5 rounded-2xl border border-white/[0.08] space-y-4 font-mono text-xs">
         <div className="flex items-center justify-between border-b border-white/[0.06] pb-2">
           <h3 className="font-bold text-slate-200 uppercase tracking-wider flex items-center gap-2">
@@ -806,11 +806,11 @@ export const AssetStoryView: React.FC<AssetStoryViewProps> = ({
             )}
           </div>
 
-          {/* Step 4: Post-Patch Re-Check (F10) */}
+          {/* Step 4: Post-Patch Re-Check */}
           <div className="p-4 rounded-xl soc-card border border-white/[0.06] space-y-2">
             <div className="flex items-center justify-between font-bold text-slate-200">
               <span>4. Closure Verification</span>
-              <span className="text-cyan-400 text-[10px] font-bold uppercase">F10 Engine</span>
+              <span className="text-cyan-400 text-[10px] font-bold uppercase">Re-Check Engine</span>
             </div>
             <p className="text-[11px] text-slate-400 font-sans leading-relaxed">
               Forensic recheck verifying web shell removal, session flush, and 0 outbound C2 traffic.

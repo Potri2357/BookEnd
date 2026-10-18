@@ -164,7 +164,7 @@ export const DecisionQueueView: React.FC<DecisionQueueViewProps> = ({
               Forensic Decision Queue
             </h1>
             <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">
-              PRD F12 Prioritised
+              Automated Priority Ranking
             </span>
           </div>
           <p className="text-xs text-slate-400 mt-0.5">

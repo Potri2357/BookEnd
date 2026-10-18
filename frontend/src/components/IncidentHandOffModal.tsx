@@ -38,7 +38,7 @@ export const IncidentHandOffModal: React.FC<IncidentHandOffModalProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-xl font-black text-white tracking-tight">
-                  Statutory Incident Hand-Off (F17)
+                  Statutory Incident Hand-Off Notification
                 </h2>
                 <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-rose-500/15 text-rose-300 border border-rose-500/40 font-black uppercase">
                   Indian CERT-In & Insurer Filing

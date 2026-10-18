@@ -164,7 +164,7 @@ export const AdvisoryDetailView: React.FC<AdvisoryDetailViewProps> = ({ advisory
           }`}
         >
           <FileText className="w-3.5 h-3.5" />
-          Sentence-Level Citations (F1 Contract)
+          Sentence-Level Citations & Provable Grounding
         </button>
         <button
           onClick={() => setActiveTab('mitre')}
@@ -190,7 +190,7 @@ export const AdvisoryDetailView: React.FC<AdvisoryDetailViewProps> = ({ advisory
         </button>
       </div>
 
-      {/* Tab 1: Sentence-Level Citation Linking (F1 PRD Acceptance Criteria) */}
+      {/* Tab 1: Sentence-Level Citation Linking */}
       {activeTab === 'intel' && (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 font-mono text-xs">
           {/* Left Column: Sentences list */}
@@ -358,7 +358,7 @@ export const AdvisoryDetailView: React.FC<AdvisoryDetailViewProps> = ({ advisory
           <div className="soc-card p-4 rounded-xl border border-slate-800 space-y-3">
             <h4 className="font-bold text-cyan-300 flex items-center gap-2 text-sm border-b border-slate-800 pb-2">
               <Terminal className="w-4 h-4 text-cyan-400" />
-              Automated Forensic Hunt Engine (F4)
+              Automated Forensic Hunt Engine
             </h4>
             <div className="space-y-2.5">
               <div className="p-3 rounded-lg bg-slate-950 border border-slate-800 space-y-1">
@@ -391,7 +391,7 @@ export const AdvisoryDetailView: React.FC<AdvisoryDetailViewProps> = ({ advisory
           <div className="soc-card p-4 rounded-xl border border-slate-800 space-y-3">
             <h4 className="font-bold text-emerald-300 flex items-center gap-2 text-sm border-b border-slate-800 pb-2">
               <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-              Required Post-Patch Cleanup Playbook (F9)
+              Required Post-Patch Remediation Playbook
             </h4>
             <p className="text-slate-400 text-xs font-sans">
               Critical operational mandate: Patching binary packages alone leaves attacker backdoors active. The following remediation actions are strictly enforced before Patch Gate clearance:

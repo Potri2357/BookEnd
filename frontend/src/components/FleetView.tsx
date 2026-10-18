@@ -72,7 +72,7 @@ export const FleetView: React.FC<FleetViewProps> = ({
           <div>
             <div className="flex items-center gap-2">
               <span className="text-[10px] font-mono px-2 py-0.5 rounded font-bold bg-cyan-950 text-cyan-300 border border-cyan-800 uppercase tracking-wider">
-                F18 MSSP MULTI-TENANT CONSOLE
+                MSSP FLEET COMMAND CONSOLE
               </span>
               <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-800 flex items-center gap-1 font-semibold">
                 <Lock className="w-3 h-3" /> ROW-LEVEL TENANT ISOLATION

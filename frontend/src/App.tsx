@@ -223,7 +223,7 @@ export function App() {
             DUCKDB 1.0 (COLUMNAR ENGINE)
           </span>
           <span className="text-slate-700">|</span>
-          <span>AIR-GAPPED COMPLIANT (F20)</span>
+          <span>AIR-GAPPED OPERATION READY</span>
           <span className="text-slate-700">|</span>
           <span className="text-cyan-400">RFC 8785 JSON · ED25519 SIGNED</span>
           <span className="text-slate-700">|</span>

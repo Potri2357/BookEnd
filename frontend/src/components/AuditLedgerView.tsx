@@ -36,14 +36,14 @@ export const AuditLedgerView: React.FC = () => {
           <div>
             <div className="flex items-center gap-2">
               <span className="text-[10px] font-mono px-2 py-0.5 rounded font-bold bg-cyan-950 text-cyan-300 border border-cyan-800 uppercase tracking-wider">
-                F19 AUDIT TRAIL
+                IMMUTABLE AUDIT TRAIL
               </span>
               <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-800 flex items-center gap-1 font-semibold">
                 <Lock className="w-3 h-3" /> IMMUTABLE SHA-256 HASH CHAIN
               </span>
             </div>
             <h1 className="text-xl md:text-2xl font-black text-white mt-1 tracking-tight">
-              Cryptographic Audit Ledger & Chain of Custody (F19)
+              Cryptographic Audit Ledger & Chain of Custody
             </h1>
             <p className="text-xs text-slate-400 font-mono mt-0.5">
               Append-only cryptographic hash chain logging every forensic evaluation, human override, playbook step, and Ed25519 proof pack issuance.
