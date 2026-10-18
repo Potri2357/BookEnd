@@ -211,7 +211,10 @@ export function App() {
               Server Offline
             </span>
             <span>
-              Could not connect to backend at <code className="bg-[#FEE2E2] px-1 py-0.5 rounded font-mono font-bold">{BASE_URL}</code> ({backendError}). Ensure simulated backend is running on port 8008.
+              Could not connect to backend at <code className="bg-[#FEE2E2] px-1 py-0.5 rounded font-mono font-bold">{BASE_URL}</code> ({backendError}).{' '}
+              {typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+                ? 'Ensure backend server is running on port 8008 (python server.py).'
+                : 'Render free tier backend may be waking up from sleep (~30s cold start). Click Retry Connection.'}
             </span>
           </div>
           <button
