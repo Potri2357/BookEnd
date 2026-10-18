@@ -2,8 +2,8 @@
 
 @layer base {
   body {
-    background-color: #f2f7f7;
-    color: #1a323d;
+    background-color: #f4f7fb;
+    color: #0f172a;
     font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     margin: 0;
     padding: 0;
@@ -19,62 +19,58 @@
   }
 }
 
-/* Crisp scrollbars in PatchGate Mint & Teal palette */
+/* Crisp scrollbars in PatchGate Ice & Slate palette */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #eaf3f2;
+  background: #edf2f8;
 }
 ::-webkit-scrollbar-thumb {
-  background: #b2d8d5;
+  background: #cbd5e1;
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #0d9488;
+  background: #3b6998;
 }
 
-/* PatchGate Mint Canvas & Subtle Tech Grid */
+/* PatchGate Ice Canvas */
 .soc-canvas {
-  background-color: #f2f7f7;
-  background-image: 
-    linear-gradient(rgba(18, 61, 75, 0.035) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(18, 61, 75, 0.035) 1px, transparent 1px);
-  background-size: 28px 28px;
+  background-color: #f4f7fb;
 }
 
-/* Executive PatchGate Surface Cards */
+/* Executive PatchGate Surface Cards matching screenshot */
 .soc-card {
   background: #ffffff;
-  border: 1px solid #d4e8e6;
-  box-shadow: 0 2px 10px -2px rgba(18, 61, 75, 0.05);
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04), 0 1px 2px -1px rgba(0, 0, 0, 0.04);
 }
 
 .soc-card-elevated {
   background: #ffffff;
-  border: 1px solid #c8e4e1;
-  box-shadow: 0 4px 20px -3px rgba(18, 61, 75, 0.08);
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.04);
 }
 
 .soc-card-tinted {
-  background: #e9f4f3;
-  border: 1px solid #c2e2df;
+  background: #ebf1f7;
+  border: 1px solid #dbe4ef;
 }
 
 .soc-table-header {
-  background: #eaf4f3;
-  border-bottom: 1px solid #cbe4e1;
-  color: #113644;
+  background: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+  color: #475569;
 }
 
 .soc-table-row {
-  border-bottom: 1px solid #e2efee;
+  border-bottom: 1px solid #f1f5f9;
   background-color: #ffffff;
   transition: background-color 0.15s ease;
 }
 .soc-table-row:hover {
-  background-color: #f1f8f7;
+  background-color: #f8fafc;
 }
 
 /* Keyboard shortcut chip */
@@ -86,18 +82,32 @@ kbd {
   font-size: 0.65rem;
   font-family: inherit;
   font-weight: 700;
-  color: #154554;
-  background-color: #e6f3f2;
-  border: 1px solid #c0e1dd;
+  color: #334155;
+  background-color: #f1f5f9;
+  border: 1px solid #cbd5e1;
   border-radius: 4px;
-  box-shadow: 0 1px 0 rgba(18, 61, 75, 0.1);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.05);
 }
 
 /* Status Signals - Tuned to PatchGate palette */
 .badge-critical {
-  background: #fee2e2;
-  color: #be123c;
-  border: 1px solid #fecdd3;
+  background: #5278a3;
+  color: #ffffff;
+}
+
+.badge-high {
+  background: #7ba4d5;
+  color: #ffffff;
+}
+
+.badge-medium {
+  background: #94a3b8;
+  color: #ffffff;
+}
+
+.badge-low {
+  background: #cbd5e1;
+  color: #334155;
 }
 
 .badge-warning {
@@ -107,37 +117,14 @@ kbd {
 }
 
 .badge-success {
-  background: #ccfbf1;
-  color: #0f766e;
-  border: 1px solid #99f6e4;
-}
-
-.badge-cyan {
-  background: #e0f2fe;
-  color: #0369a1;
-  border: 1px solid #bae6fd;
-}
-
-.badge-teal {
-  background: #e0f2f1;
-  color: #0d766e;
+  background: #ecfdf5;
+  color: #059669;
   border: 1px solid #a7f3d0;
 }
 
 /* Step Number Badges */
 .step-bubble {
-  background: #143e4c;
+  background: #3b6998;
   color: #ffffff;
 }
 
-/* Radar & Packet animations */
-@keyframes packet-dash {
-  to {
-    stroke-dashoffset: -20;
-  }
-}
-
-.animate-packet-flow {
-  stroke-dasharray: 4, 4;
-  animation: packet-dash 1s linear infinite;
-}

@@ -182,38 +182,38 @@ export const DecisionQueueView: React.FC<DecisionQueueViewProps> = ({
           <button
             onClick={onBulkApprove}
             disabled={eligibleForBulk === 0 || isBulkApproving}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold font-mono transition border shadow-xs ${
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold font-mono transition shadow-sm ${
               eligibleForBulk > 0 && !isBulkApproving
-                ? 'bg-[#143e4c] hover:bg-[#1a4f61] text-white border-[#143e4c]'
-                : 'bg-white text-slate-400 border-slate-200 cursor-not-allowed'
+                ? 'bg-[#3b6998] hover:bg-[#325a82] text-white'
+                : 'bg-white text-slate-400 border border-slate-200 cursor-not-allowed'
             }`}
           >
-            <CheckCheck className={`w-4 h-4 ${eligibleForBulk > 0 ? 'text-[#5eead4]' : 'text-slate-400'}`} />
+            <CheckCheck className={`w-4 h-4 ${eligibleForBulk > 0 ? 'text-white' : 'text-slate-400'}`} />
             <span>Bulk Approve Clean ({eligibleForBulk})</span>
           </button>
         </div>
       </div>
 
       {/* Filter Toolbar */}
-      <div className="soc-card p-3 rounded-xl flex flex-wrap items-center justify-between gap-3 text-xs">
+      <div className="bg-white p-3 rounded-2xl border border-[#e2e8f0] flex flex-wrap items-center justify-between gap-3 text-xs shadow-xs">
         <div className="flex items-center gap-2 flex-1 min-w-[260px]">
-          <Search className="w-4 h-4 text-[#608390] ml-1" />
+          <Search className="w-4 h-4 text-[#94a3b8] ml-1" />
           <input
             type="text"
             placeholder="Search host, asset ID, IP address or owner..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="bg-[#f0f7f6] border border-[#cbe4e1] rounded-lg px-3 py-1.5 text-xs text-[#113644] placeholder-[#799ba8] focus:outline-none focus:border-[#0d9488] flex-1 font-mono"
+            className="bg-[#edf2f7] border border-transparent focus:border-[#cbd5e1] rounded-xl px-3 py-1.5 text-xs text-[#0f172a] placeholder-[#94a3b8] focus:outline-none flex-1 font-mono transition"
           />
         </div>
 
         <div className="flex items-center gap-3 flex-wrap">
           <div className="flex items-center gap-1.5">
-            <span className="text-[#557784] font-mono text-[11px] uppercase tracking-wider font-semibold">Verdict:</span>
+            <span className="text-[#64748b] font-mono text-[11px] uppercase tracking-wider font-semibold">Verdict:</span>
             <select
               value={verdictFilter}
               onChange={(e) => setVerdictFilter(e.target.value)}
-              className="bg-[#f0f7f6] border border-[#cbe4e1] rounded-lg px-2.5 py-1 text-[#113644] focus:outline-none font-mono text-xs cursor-pointer font-medium"
+              className="bg-[#edf2f7] border border-transparent rounded-xl px-2.5 py-1 text-[#334155] focus:outline-none font-mono text-xs cursor-pointer font-medium"
             >
               <option value="all">All States</option>
               <option value="Likely compromised">Likely Compromised</option>
@@ -224,11 +224,11 @@ export const DecisionQueueView: React.FC<DecisionQueueViewProps> = ({
           </div>
 
           <div className="flex items-center gap-1.5">
-            <span className="text-[#557784] font-mono text-[11px] uppercase tracking-wider font-semibold">Tier:</span>
+            <span className="text-[#64748b] font-mono text-[11px] uppercase tracking-wider font-semibold">Tier:</span>
             <select
               value={tierFilter}
               onChange={(e) => setTierFilter(e.target.value)}
-              className="bg-[#f0f7f6] border border-[#cbe4e1] rounded-lg px-2.5 py-1 text-[#113644] focus:outline-none font-mono text-xs cursor-pointer font-medium"
+              className="bg-[#edf2f7] border border-transparent rounded-xl px-2.5 py-1 text-[#334155] focus:outline-none font-mono text-xs cursor-pointer font-medium"
             >
               <option value="all">All Tiers</option>
               <option value="emergency">Emergency (12h)</option>
@@ -237,17 +237,17 @@ export const DecisionQueueView: React.FC<DecisionQueueViewProps> = ({
             </select>
           </div>
 
-          <span className="text-[#557784] font-mono text-[11px] pl-2 border-l border-[#d2e8e5]">
-            Filtered: <strong className="text-[#0d9488]">{filteredQueue.length}</strong> of {queue.length}
+          <span className="text-[#64748b] font-mono text-[11px] pl-2 border-l border-[#e2e8f0]">
+            Filtered: <strong className="text-[#3b6998]">{filteredQueue.length}</strong> of {queue.length}
           </span>
         </div>
       </div>
 
       {/* High-Density Command Table */}
-      <div className="soc-card rounded-2xl overflow-hidden border border-[#d2e8e5] shadow-sm">
+      <div className="bg-white rounded-2xl overflow-hidden border border-[#e2e8f0] shadow-xs">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse">
-            <thead className="bg-[#eaf4f3] text-[#143e4c] font-mono border-b border-[#cbe4e1] text-[10px] tracking-wider uppercase font-bold">
+            <thead className="bg-[#f8fafc] text-[#64748b] font-mono border-b border-[#e2e8f0] text-[10px] tracking-wider uppercase font-bold">
               <tr>
                 <th className="py-3 px-4">ASSET & HOSTNAME</th>
                 <th className="py-3 px-3">ORGANISATION</th>
@@ -259,10 +259,10 @@ export const DecisionQueueView: React.FC<DecisionQueueViewProps> = ({
                 <th className="py-3 px-4 text-right">DECISION</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#e5f1f0]">
+            <tbody className="divide-y divide-[#f1f5f9]">
               {filteredQueue.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="py-14 text-center text-[#688a96] font-mono">
+                  <td colSpan={8} className="py-14 text-center text-[#64748b] font-mono">
                     Zero items matching current criteria.
                   </td>
                 </tr>
@@ -275,8 +275,8 @@ export const DecisionQueueView: React.FC<DecisionQueueViewProps> = ({
                     <tr
                       key={item.asset_id}
                       onClick={() => onSelectAsset(item.host_name)}
-                      className={`cursor-pointer transition hover:bg-[#f1f8f7] group relative ${
-                        isComp ? 'bg-rose-50/30' : ''
+                      className={`cursor-pointer transition hover:bg-[#f8fafc] group relative ${
+                        isComp ? 'bg-rose-50/20' : ''
                       }`}
                     >
                       {/* Asset & Host */}
@@ -375,7 +375,7 @@ export const DecisionQueueView: React.FC<DecisionQueueViewProps> = ({
                             e.stopPropagation()
                             onSelectAsset(item.host_name)
                           }}
-                          className="px-3 py-1 rounded-lg bg-[#e0f2f1] hover:bg-[#bbf0eb] text-[#0d766e] border border-[#a7f3d0] text-[11px] font-mono font-bold transition inline-flex items-center gap-1 group-hover:border-[#0d9488] shadow-2xs"
+                          className="px-3 py-1 rounded-xl bg-[#3b6998] hover:bg-[#325a82] text-white text-[11px] font-mono font-bold transition inline-flex items-center gap-1 shadow-xs"
                         >
                           <span>Triage</span>
                           <ChevronRight className="w-3 h-3 group-hover:translate-x-0.5 transition" />
