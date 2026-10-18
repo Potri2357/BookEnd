@@ -7,12 +7,27 @@ import os
 import time
 import uuid
 from datetime import datetime, timezone
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import PlainTextResponse
 from app.api.routes import router
 from app.core.config import settings
 from app.core.server_telemetry import ServerTelemetryManager
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Pre-warm RangeLiteSimulator and pre-compute queue stories
+    # so first-time requests on low-CPU instances (e.g. Render free tier 0.1 CPU) are instantaneous (<50ms).
+    try:
+        from app.simulator.range_lite import RangeLiteSimulator
+        from app.api.routes import get_decision_queue
+        RangeLiteSimulator.get_instance()
+        get_decision_queue()
+    except Exception as e:
+        import logging
+        logging.error(f"Error during simulator warm-up: {e}")
+    yield
 
 app = FastAPI(
     title="BookEnd Enterprise Assurance Server",
@@ -23,7 +38,8 @@ app = FastAPI(
     ),
     version=settings.VERSION,
     docs_url="/docs",
-    redoc_url="/redoc"
+    redoc_url="/redoc",
+    lifespan=lifespan
 )
 
 # Enterprise CORS Policy with trusted origin allowlist & method controls

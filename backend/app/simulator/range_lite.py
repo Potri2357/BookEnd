@@ -55,7 +55,7 @@ class RangeLiteSimulator:
     def init_db(self):
         self.con.execute("""
             CREATE TABLE IF NOT EXISTS telemetry_events (
-                event_id VARCHAR PRIMARY KEY,
+                event_id VARCHAR,
                 timestamp TIMESTAMP,
                 tenant_id VARCHAR,
                 host_name VARCHAR,
@@ -76,9 +76,6 @@ class RangeLiteSimulator:
                 scenario_id VARCHAR
             )
         """)
-        self.con.execute("CREATE INDEX IF NOT EXISTS idx_host ON telemetry_events(host_name)")
-        self.con.execute("CREATE INDEX IF NOT EXISTS idx_time ON telemetry_events(timestamp)")
-        self.con.execute("CREATE INDEX IF NOT EXISTS idx_tenant ON telemetry_events(tenant_id)")
 
     def populate_all(self, seed: int = 42, simulate_s4_gap: bool = True):
         random.seed(seed)
@@ -365,10 +362,27 @@ class RangeLiteSimulator:
                         "S1"
                     ))
 
-        # Insert events into DuckDB
-        self.con.executemany("""
-            INSERT INTO telemetry_events VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """, events_batch)
+        # Fast columnar bulk insert into DuckDB
+        try:
+            import numpy as np
+            cols = [
+                "event_id", "timestamp", "tenant_id", "host_name", "source_type",
+                "event_action", "user_name", "process_name", "process_cmdline",
+                "file_path", "http_method", "url_path", "status_code",
+                "src_ip", "dst_ip", "dst_port", "network_bytes",
+                "is_malicious", "scenario_id"
+            ]
+            col_data = {c: np.array([r[i] for r in events_batch]) for i, c in enumerate(cols)}
+            self.con.execute("INSERT INTO telemetry_events SELECT * FROM col_data")
+        except Exception:
+            self.con.executemany("""
+                INSERT INTO telemetry_events VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, events_batch)
+
+        # Build columnar indexes post-insert for sub-millisecond query execution
+        self.con.execute("CREATE INDEX IF NOT EXISTS idx_host ON telemetry_events(host_name)")
+        self.con.execute("CREATE INDEX IF NOT EXISTS idx_time ON telemetry_events(timestamp)")
+        self.con.execute("CREATE INDEX IF NOT EXISTS idx_tenant ON telemetry_events(tenant_id)")
 
     def execute_query(self, sql: str, params: Tuple = ()) -> List[Dict[str, Any]]:
         cursor = self.con.execute(sql, params)

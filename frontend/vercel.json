@@ -1,5 +1,14 @@
 {
+  "$schema": "https://openapi.vercel.sh/vercel.json",
   "rewrites": [
+    {
+      "source": "/v1/:path*",
+      "destination": "https://bookend-pp3k.onrender.com/v1/:path*"
+    },
+    {
+      "source": "/health",
+      "destination": "https://bookend-pp3k.onrender.com/health"
+    },
     {
       "source": "/(.*)",
       "destination": "/index.html"

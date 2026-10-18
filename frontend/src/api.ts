@@ -6,15 +6,17 @@ import {
 function normalizeApiBaseUrl(): string {
   const envUrl = (import.meta.env.VITE_API_BASE_URL || '').trim().replace(/\/+$/, '')
 
-  // In development or when running on localhost, prefer relative '/v1' so the Vite dev server proxy
-  // forwards calls to the local FastAPI simulated backend on port 8008.
-  const isLocalhost = typeof window !== 'undefined' &&
+  const isBrowser = typeof window !== 'undefined'
+  const isLocalhost = isBrowser &&
     (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+  const isVercel = isBrowser && window.location.hostname.endsWith('vercel.app')
 
-  if (import.meta.env.DEV || isLocalhost) {
-    if (!envUrl || envUrl.includes('onrender.com') || envUrl === '/v1') {
-      return '/v1'
-    }
+  // In development, on localhost, or on Vercel: use relative '/v1'
+  // - Localhost routes via Vite proxy to localhost:8008
+  // - Vercel routes via vercel.json rewrites directly to the Render backend
+  // This bypasses ISP TLS resets to onrender.com and eliminates cross-origin CORS overhead.
+  if (import.meta.env.DEV || isLocalhost || isVercel) {
+    return '/v1'
   }
 
   let url = envUrl || '/v1'
