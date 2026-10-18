@@ -98,3 +98,55 @@ def test_evaluation_harness_endpoint(client):
     assert eval_data["scenarios"]["S3_benign_look_alike"]["passed"] is True
     assert eval_data["scenarios"]["S4_blind_spot_coverage_honesty"]["passed"] is True
     assert eval_data["scenarios"]["S5_persistence_reopen"]["passed"] is True
+
+def test_override_role_and_justification_enforcement(client):
+    # 1. Attempt override without adequate justification (<10 chars)
+    short_res = client.post(
+        "/v1/decisions/override",
+        json={"asset_id": "ASSET-MERIDIAN-001", "approver": "sec_lead", "reason": "too short"},
+        headers={"X-Approver-Role": "Security_Approver"}
+    )
+    assert short_res.status_code == 400
+    assert "at least 10 characters" in short_res.json()["detail"]
+
+    # 2. Attempt override with unauthorized role
+    unauth_res = client.post(
+        "/v1/decisions/override",
+        json={"asset_id": "ASSET-MERIDIAN-001", "approver": "viewer_user", "reason": "Emergency production hotfix bypass"},
+        headers={"X-Approver-Role": "Viewer"}
+    )
+    assert unauth_res.status_code == 403
+    assert "not authorized" in unauth_res.json()["detail"]
+
+    # 3. Valid override with authorized role and compensating controls explanation
+    valid_res = client.post(
+        "/v1/decisions/override",
+        json={"asset_id": "ASSET-MERIDIAN-001", "approver": "sec_lead@enterprise.local", "reason": "Compensating controls active: isolated VLAN and EDR active hunt"},
+        headers={"X-Approver-Role": "Security_Approver"}
+    )
+    assert valid_res.status_code == 200
+    data = valid_res.json()
+    assert data["gate_locked"] is False
+    assert data["override_applied"] is True
+
+    # Clean up test side-effect so downstream scenario tests start clean
+    client.post("/v1/demo/reset")
+
+def test_proof_pack_tampered_evidence_event_rejected(client):
+    res = client.get("/v1/proof-packs/meridian-vpn-gw-01")
+    assert res.status_code == 200
+    pack = res.json()
+
+    # Tamper with an enclosed evidence item's details content
+    tampered_pack = dict(pack)
+    tampered_evidence = [dict(ev) for ev in tampered_pack["evidence_items"]]
+    if tampered_evidence:
+        tampered_evidence[0]["details"] = dict(tampered_evidence[0]["details"])
+        tampered_evidence[0]["details"]["injected_signal"] = "TAMPERED_FORENSIC_EVIDENCE"
+        tampered_pack["evidence_items"] = tampered_evidence
+
+    verify_res = client.post("/v1/proof-packs/verify", json=tampered_pack)
+    assert verify_res.status_code == 200
+    verify_data = verify_res.json()
+    assert verify_data["is_valid"] is False
+    assert verify_data["details"]["evidence_hashes_valid"] is False

@@ -7,7 +7,7 @@ signed with Ed25519 and hashed with canonical SHA-256 trees.
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Tuple
 from app.core.audit import AuditLedger
-from app.core.crypto import ProofPackSigner, canonical_json_bytes, sha256_hex
+from app.core.crypto import ProofPackSigner, canonical_json_bytes, compute_evidence_event_hash, sha256_hex
 from app.models.schemas import (
     Asset, DeadlineClock, DecisionGate, EvidenceEvent, Playbook,
     ProofPack, ProofPackManifest, Verdict
@@ -98,8 +98,9 @@ def verify_proof_pack(pack: ProofPack) -> Tuple[bool, str, Dict[str, Any]]:
     """
     Independently verifies a proof pack:
     1. Validates Ed25519 cryptographic signature over canonical manifest JSON.
-    2. Verifies evidence hashes match manifest evidence_hashes.
-    3. Validates that tampering with any field immediately breaks verification.
+    2. Validates manifest consistency against enclosed verdict and decision outcome.
+    3. Verifies evidence hashes match manifest evidence_hashes.
+    4. Validates that tampering with any field immediately breaks verification.
     """
     manifest_dict = pack.manifest.model_dump()
     sig_valid = ProofPackSigner.verify_canonical(
@@ -114,17 +115,52 @@ def verify_proof_pack(pack: ProofPack) -> Tuple[bool, str, Dict[str, Any]]:
             "hashes_valid": False
         }
 
-    # Verify evidence item hashes
-    computed_ev_hashes = [e.content_hash for e in pack.evidence_items]
-    if computed_ev_hashes != pack.manifest.evidence_hashes:
-        return False, "Evidence content hash mismatch detected. Forensic telemetry modified.", {
+    # Verify manifest alignment with payload models
+    if pack.manifest.verdict_state != pack.verdict.state:
+        return False, "Manifest verdict mismatch: enclosed verdict state does not match signed manifest.", {
             "signature_valid": True,
+            "hashes_valid": False
+        }
+
+    if pack.manifest.decision_outcome != pack.decision.outcome:
+        return False, "Manifest gate outcome mismatch: enclosed gate decision does not match signed manifest.", {
+            "signature_valid": True,
+            "hashes_valid": False
+        }
+
+    # 3. Independently recompute each evidence item's canonical hash from its underlying content
+    recomputed_hashes = []
+    for ev in pack.evidence_items:
+        h = compute_evidence_event_hash(
+            event_id=ev.event_id,
+            asset_id=ev.asset_id,
+            timestamp=ev.timestamp,
+            source_type=ev.source_type,
+            event_action=ev.event_action,
+            signal_class=ev.signal_class,
+            details=ev.details
+        )
+        if h != ev.content_hash:
+            return False, f"Evidence content hash mismatch for event {ev.event_id}. Underlying data altered.", {
+                "signature_valid": True,
+                "evidence_hashes_valid": False,
+                "hashes_valid": False
+            }
+        recomputed_hashes.append(h)
+
+    # 4. Verify recomputed evidence hashes match manifest list
+    if recomputed_hashes != pack.manifest.evidence_hashes:
+        return False, "Evidence manifest hash mismatch: enclosed events do not match signed manifest list.", {
+            "signature_valid": True,
+            "evidence_hashes_valid": False,
             "hashes_valid": False
         }
 
     return True, "Proof Pack is authentic and cryptographically valid. Zero tampering detected.", {
         "signature_valid": True,
+        "evidence_hashes_valid": True,
         "hashes_valid": True,
         "signed_by": pack.manifest.issuer,
         "verified_at": datetime.now(timezone.utc).isoformat()
     }
+

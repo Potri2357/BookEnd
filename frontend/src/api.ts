@@ -5,133 +5,136 @@ import {
 
 const BASE_URL = (import.meta.env.VITE_API_BASE_URL || '/v1').replace(/\/+$/, '')
 
+/**
+ * Robust enterprise API client helper with standardized error handling and status code validation.
+ */
+async function apiRequest<T>(path: string, options?: RequestInit): Promise<T> {
+  const url = `${BASE_URL}${path}`
+  const headers = new Headers(options?.headers || {})
+  if (!headers.has('Content-Type') && (!options?.method || options.method !== 'GET')) {
+    headers.set('Content-Type', 'application/json')
+  }
+
+  const res = await fetch(url, {
+    ...options,
+    headers
+  })
+
+  if (!res.ok) {
+    let errorMessage = `HTTP ${res.status}: ${res.statusText}`
+    try {
+      const errJson = await res.json()
+      if (errJson && errJson.detail) {
+        errorMessage = errJson.detail
+      }
+    } catch {
+      // Body not JSON
+    }
+    throw new Error(errorMessage)
+  }
+
+  return res.json() as Promise<T>
+}
+
 export async function fetchTenants(): Promise<Tenant[]> {
-  const res = await fetch(`${BASE_URL}/tenants`)
-  return res.json()
+  return apiRequest<Tenant[]>('/tenants')
 }
 
 export async function fetchQueue(tenantId?: string): Promise<QueueItem[]> {
-  const url = tenantId && tenantId !== 'all' ? `${BASE_URL}/queue?tenant_id=${tenantId}` : `${BASE_URL}/queue`
-  const res = await fetch(url)
-  return res.json()
+  const query = tenantId && tenantId !== 'all' ? `?tenant_id=${encodeURIComponent(tenantId)}` : ''
+  return apiRequest<QueueItem[]>(`/queue${query}`)
 }
 
 export async function fetchAssetStory(assetId: string): Promise<AssetStory> {
-  const res = await fetch(`${BASE_URL}/assets/${assetId}/story`)
-  if (!res.ok) throw new Error('Failed to load asset story')
-  return res.json()
+  return apiRequest<AssetStory>(`/assets/${encodeURIComponent(assetId)}/story`)
 }
 
 export async function fetchAdvisory(advisoryId: string): Promise<Advisory> {
-  const res = await fetch(`${BASE_URL}/advisories/${advisoryId}`)
-  return res.json()
+  return apiRequest<Advisory>(`/advisories/${encodeURIComponent(advisoryId)}`)
 }
 
 export async function overrideGate(assetId: string, approver: string, reason: string) {
-  const res = await fetch(`${BASE_URL}/decisions/override`, {
+  return apiRequest<any>('/decisions/override', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ asset_id: assetId, approver, reason })
   })
-  return res.json()
 }
 
 export async function bulkApprovePatchNow(approver: string) {
-  const res = await fetch(`${BASE_URL}/decisions/bulk-approve`, {
+  return apiRequest<any>('/decisions/bulk-approve', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ approver })
   })
-  return res.json()
 }
 
 export async function triggerRecheck(assetId: string, simulateS5: boolean = false) {
-  const res = await fetch(`${BASE_URL}/assets/${assetId}/recheck`, {
+  return apiRequest<any>(`/assets/${encodeURIComponent(assetId)}/recheck`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ simulate_s5_persistence: simulateS5 })
   })
-  return res.json()
 }
 
 export async function updatePlaybookStep(assetId: string, stepId: string, status: string, verifiedBy: string) {
-  const res = await fetch(`${BASE_URL}/assets/${assetId}/playbook/step`, {
+  return apiRequest<any>(`/assets/${encodeURIComponent(assetId)}/playbook/step`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ step_id: stepId, status, verified_by: verifiedBy })
   })
-  return res.json()
 }
 
 export async function fetchProofPack(assetId: string): Promise<ProofPack> {
-  const res = await fetch(`${BASE_URL}/proof-packs/${assetId}`)
-  return res.json()
+  return apiRequest<ProofPack>(`/proof-packs/${encodeURIComponent(assetId)}`)
 }
 
 export async function verifyProofPack(pack: ProofPack) {
-  const res = await fetch(`${BASE_URL}/proof-packs/verify`, {
+  return apiRequest<any>('/proof-packs/verify', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(pack)
   })
-  return res.json()
 }
 
 export async function askAssistant(assetId: string, question: string) {
-  const res = await fetch(`${BASE_URL}/assistant/ask`, {
+  return apiRequest<any>('/assistant/ask', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ asset_id: assetId, question })
   })
-  return res.json()
 }
 
 export async function fetchIncidentDraft(assetId: string) {
-  const res = await fetch(`${BASE_URL}/incident/${assetId}`)
-  return res.json()
+  return apiRequest<any>(`/incident/${encodeURIComponent(assetId)}`)
 }
 
 export async function fetchBlastRadius(assetId: string): Promise<BlastRadiusGraph> {
-  const res = await fetch(`${BASE_URL}/blast-radius/${assetId}`)
-  return res.json()
+  return apiRequest<BlastRadiusGraph>(`/blast-radius/${encodeURIComponent(assetId)}`)
 }
 
 export async function fetchAuditLedger() {
-  const res = await fetch(`${BASE_URL}/audit/ledger`)
-  return res.json()
+  return apiRequest<any>('/audit/ledger')
 }
 
 export async function fetchConnectors() {
-  const res = await fetch(`${BASE_URL}/connectors`)
-  return res.json()
+  return apiRequest<any>('/connectors')
 }
 
 export async function resetDemo() {
-  const res = await fetch(`${BASE_URL}/demo/reset`, { method: 'POST' })
-  return res.json()
+  return apiRequest<any>('/demo/reset', { method: 'POST' })
 }
 
 export async function togglePersistence() {
-  const res = await fetch(`${BASE_URL}/demo/toggle-persistence`, { method: 'POST' })
-  return res.json()
+  return apiRequest<any>('/demo/toggle-persistence', { method: 'POST' })
 }
 
 export async function runEvaluationHarness() {
-  const res = await fetch(`${BASE_URL}/evaluation/run`)
-  return res.json()
+  return apiRequest<any>('/evaluation/run')
 }
 
 export async function fetchServerStatus() {
-  const res = await fetch(`${BASE_URL}/system/server-status`)
-  return res.json()
+  return apiRequest<any>('/system/server-status')
 }
 
 export async function flushServerCache() {
-  const res = await fetch(`${BASE_URL}/system/flush-cache`, { method: 'POST' })
-  return res.json()
+  return apiRequest<any>('/system/flush-cache', { method: 'POST' })
 }
 
 export async function rotateServerKeys() {
-  const res = await fetch(`${BASE_URL}/system/rotate-keys`, { method: 'POST' })
-  return res.json()
+  return apiRequest<any>('/system/rotate-keys', { method: 'POST' })
 }

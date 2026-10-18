@@ -39,6 +39,7 @@ _cached_hunt_spec = None
 _cached_playbooks: Dict[str, Any] = {}
 _cached_verdicts: Dict[str, Any] = {}
 _cached_gates: Dict[str, Any] = {}
+_cached_stories: Dict[str, Any] = {}
 _approved_assets: set = set()
 _simulate_s5_persistence_flag: bool = True
 
@@ -52,9 +53,15 @@ def get_or_create_hunt_spec():
         _cached_hunt_spec = generate_hunt_spec_for_advisory(sim.advisory)
     return _cached_hunt_spec
 
-def evaluate_asset_pipeline(asset: Asset) -> Dict[str, Any]:
-    """Runs complete end-to-end forensic analysis for a single asset."""
+def evaluate_asset_pipeline(asset: Asset, force_refresh: bool = False) -> Dict[str, Any]:
+    """Runs complete end-to-end forensic analysis for a single asset or returns cached decision."""
     sim = get_sim()
+    if not force_refresh and asset.id in _cached_stories:
+        cached = _cached_stories[asset.id]
+        # Refresh real-time clock without running full DuckDB hunts and audit writes
+        cached["clock"] = ClockManager.get_instance().initialize_clock_for_asset(asset, sim.advisory.id)
+        return cached
+
     spec = get_or_create_hunt_spec()
     evidence = execute_hunts_for_asset(sim.con, asset, spec)
     coverage = calculate_log_coverage(sim.con, asset, settings.DEFAULT_LOOKBACK_DAYS)
@@ -82,7 +89,7 @@ def evaluate_asset_pipeline(asset: Asset) -> Dict[str, Any]:
     _cached_verdicts[asset.id] = verdict
     _cached_gates[asset.id] = gate
 
-    return {
+    story = {
         "asset": asset,
         "advisory": sim.advisory,
         "evidence": evidence,
@@ -93,6 +100,8 @@ def evaluate_asset_pipeline(asset: Asset) -> Dict[str, Any]:
         "playbook": playbook,
         "blast_radius": blast
     }
+    _cached_stories[asset.id] = story
+    return story
 
 # ==================== TENANTS & FLEET ====================
 @router.get("/tenants")
@@ -222,31 +231,74 @@ def get_decision_queue(tenant_id: Optional[str] = None):
     return queue_items
 
 # ==================== ACTIONS, OVERRIDES & BULK APPROVAL ====================
+ALLOWED_OVERRIDE_ROLES = {"Security_Approver", "Incident_Lead", "SecurityApprover", "Admin", "Senior_Analyst"}
+
 class OverridePayload(BaseModel):
     asset_id: str
     approver: str
     reason: str
 
 @router.post("/decisions/override")
-def override_patch_gate(payload: OverridePayload):
+def override_patch_gate(payload: OverridePayload, request: Request):
+    approver = payload.approver.strip()
+    if not approver:
+        raise HTTPException(status_code=400, detail="Override rejected: Valid approver identity required.")
+
+    role = request.headers.get("X-Approver-Role", "Security_Approver")
+    if role not in ALLOWED_OVERRIDE_ROLES:
+        AuditLedger.get_ledger().append(
+            actor=approver,
+            role=role,
+            action="REJECTED_OVERRIDE_ATTEMPT",
+            object_id=payload.asset_id,
+            details={"reason": payload.reason, "error": f"Role '{role}' is not authorized to override patch gates"}
+        )
+        raise HTTPException(
+            status_code=403,
+            detail=f"Role '{role}' is not authorized to override locked patch gates. Required role: Security_Approver or Incident_Lead."
+        )
+
+    reason = payload.reason.strip()
+    if len(reason) < 10:
+        AuditLedger.get_ledger().append(
+            actor=approver,
+            role=role,
+            action="REJECTED_OVERRIDE_ATTEMPT",
+            object_id=payload.asset_id,
+            details={"reason": reason, "error": "Insufficient justification (min 10 characters required)"}
+        )
+        raise HTTPException(
+            status_code=400,
+            detail="Override rejected: Justification reason must be at least 10 characters detailing compensating controls."
+        )
+
+    sim = get_sim()
     gate = _cached_gates.get(payload.asset_id)
     if not gate:
-        raise HTTPException(status_code=404, detail="Gate not found for asset")
-    updated_gate = apply_gate_override(gate, payload.approver, payload.reason)
+        target_asset = next((a for a in sim.assets if a.id == payload.asset_id or a.host_name == payload.asset_id), None)
+        if not target_asset:
+            raise HTTPException(status_code=404, detail="Gate not found for asset")
+        story = evaluate_asset_pipeline(target_asset)
+        gate = story["gate"]
+
+    updated_gate = apply_gate_override(gate, approver, reason, role=role)
     _cached_gates[payload.asset_id] = updated_gate
+    if payload.asset_id in _cached_stories:
+        _cached_stories[payload.asset_id]["gate"] = updated_gate
     
     # Send webhook alert for override
     WebhookDispatcher.get_instance().dispatch(
         event_type="GATE_OVERRIDE_APPLIED",
         target_url="https://itsm.internal.local/webhook",
-        payload={"asset_id": payload.asset_id, "approver": payload.approver, "reason": payload.reason}
+        payload={"asset_id": payload.asset_id, "approver": approver, "reason": reason, "role": role}
     )
     return updated_gate
 
 @router.post("/decisions/bulk-approve")
-def bulk_approve_no_evidence(payload: Dict[str, Any]):
+def bulk_approve_no_evidence(payload: Dict[str, Any], request: Request):
     sim = get_sim()
     approver = payload.get("approver", "lead_approver@patchguard.local")
+    role = request.headers.get("X-Approver-Role", "SecurityApprover")
     approved = []
     
     for a in sim.assets:
@@ -255,10 +307,14 @@ def bulk_approve_no_evidence(payload: Dict[str, Any]):
             _approved_assets.add(a.id)
             _approved_assets.add(a.host_name)
             approved.append(a.id)
+            if a.id in _cached_stories:
+                _cached_stories[a.id]["gate"].status = "approved"
+                _cached_stories[a.id]["gate"].gate_locked = False
+                _cached_stories[a.id]["gate"].outcome = "Approved & Released"
 
     AuditLedger.get_ledger().append(
         actor=approver,
-        role="SecurityApprover",
+        role=role,
         action="BULK_APPROVE_PATCH_NOW",
         object_id=f"count_{len(approved)}",
         details={"approved_assets": approved}
@@ -298,6 +354,10 @@ def trigger_recheck(asset_id: str, payload: Optional[Dict[str, Any]] = None):
 
     pb = _cached_playbooks.get(target_asset.id)
     result = execute_post_patch_recheck(sim.con, target_asset, pb, simulate_s5_persistence=simulate_s5)
+
+    # Invalidate cached story and gate so queue and story reflect updated status
+    _cached_stories.pop(target_asset.id, None)
+    _cached_gates.pop(target_asset.id, None)
 
     # Update asset status
     target_asset.status = result.new_status
@@ -463,19 +523,22 @@ def get_demo_scenarios():
 
 @router.post("/demo/toggle-persistence")
 def toggle_s5_persistence():
-    global _simulate_s5_persistence_flag
+    global _simulate_s5_persistence_flag, _cached_stories, _cached_gates
     _simulate_s5_persistence_flag = not _simulate_s5_persistence_flag
+    _cached_stories.clear()
+    _cached_gates.clear()
     return {"s5_persistence_active": _simulate_s5_persistence_flag}
 
 @router.post("/demo/reset")
 def reset_demo():
-    global _cached_hunt_spec, _cached_playbooks, _cached_verdicts, _cached_gates, _simulate_s5_persistence_flag, _approved_assets
+    global _cached_hunt_spec, _cached_playbooks, _cached_verdicts, _cached_gates, _cached_stories, _simulate_s5_persistence_flag, _approved_assets
     sim = get_sim()
     sim.populate_all(seed=42)
     _cached_hunt_spec = None
     _cached_playbooks = {}
     _cached_verdicts = {}
     _cached_gates = {}
+    _cached_stories = {}
     _approved_assets = set()
     _simulate_s5_persistence_flag = True
     AuditLedger.get_ledger().reset()

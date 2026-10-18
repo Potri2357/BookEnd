@@ -3,6 +3,7 @@ BookEnd Core API Server (FastAPI).
 Enterprise production server providing REST, SSE, Prometheus metrics,
 and real-time infrastructure telemetry for all BookEnd modules.
 """
+import os
 import time
 import uuid
 from datetime import datetime, timezone
@@ -25,13 +26,27 @@ app = FastAPI(
     redoc_url="/redoc"
 )
 
-# Enable CORS for enterprise frontend & microservices (supports credentials and any origin)
+# Enterprise CORS Policy with trusted origin allowlist & method controls
+cors_allowed_raw = os.getenv(
+    "CORS_ALLOWED_ORIGINS",
+    "http://localhost:5173,http://127.0.0.1:5173,http://localhost:8008,http://127.0.0.1:8008"
+)
+allowed_origins = [o.strip() for o in cors_allowed_raw.split(",") if o.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origin_regex=r".*",
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=allowed_origins if "*" not in allowed_origins else ["*"],
+    allow_origin_regex=r"https?://(localhost|127\.0\.0\.1)(:\d+)?|https://.*\.onrender\.com|https://.*\.vercel\.app",
+    allow_credentials=True if "*" not in allowed_origins else False,
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"],
+    allow_headers=[
+        "Authorization",
+        "Content-Type",
+        "X-Correlation-ID",
+        "X-Approver-Role",
+        "X-Requested-With",
+        "Accept"
+    ],
     expose_headers=[
         "X-Correlation-ID",
         "X-Server-Node",

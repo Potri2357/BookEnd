@@ -6,7 +6,7 @@ and safely executes hunts with stable event IDs.
 """
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Tuple
-from app.core.crypto import sha256_hex, canonical_json_bytes
+from app.core.crypto import sha256_hex, canonical_json_bytes, compute_evidence_event_hash
 from app.models.schemas import Advisory, Asset, EvidenceEvent, HuntHypothesis, HuntSpec
 
 def generate_hunt_spec_for_advisory(advisory: Advisory) -> HuntSpec:
@@ -124,7 +124,10 @@ def execute_hunts_for_asset(
             cols = [desc[0] for desc in cursor.description]
 
             for row in rows:
-                row_dict = dict(zip(cols, row))
+                row_dict = {
+                    k: (v.isoformat() if hasattr(v, "isoformat") else v)
+                    for k, v in zip(cols, row)
+                }
                 ev_id = str(row_dict["event_id"])
                 src_type = str(row_dict["source_type"])
 
@@ -146,15 +149,15 @@ def execute_hunts_for_asset(
                     confidence = "medium"
 
                 ts_str = str(row_dict["timestamp"])
-                content_hash = sha256_hex(canonical_json_bytes({
-                    "event_id": ev_id,
-                    "host": asset.host_name,
-                    "timestamp": ts_str,
-                    "action": row_dict.get("event_action"),
-                    "cmd": row_dict.get("process_cmdline"),
-                    "file": row_dict.get("file_path"),
-                    "dst_ip": row_dict.get("dst_ip")
-                }))
+                content_hash = compute_evidence_event_hash(
+                    event_id=ev_id,
+                    asset_id=asset.id,
+                    timestamp=ts_str,
+                    source_type=src_type,
+                    event_action=str(row_dict.get("event_action", "unknown")),
+                    signal_class=sig_class,
+                    details=row_dict
+                )
 
                 ev_item = EvidenceEvent(
                     event_id=ev_id,

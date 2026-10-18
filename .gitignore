@@ -18,3 +18,7 @@ dist/
 *.env
 !.env.example
 !frontend/.env.example
+
+# Local Secrets & Runtime State
+.signing_key*
+audit_ledger.json

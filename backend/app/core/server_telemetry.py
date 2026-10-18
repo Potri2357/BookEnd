@@ -101,6 +101,11 @@ class ServerTelemetryManager:
         mem_used_mb = round(1840 + 120 * ((t % 120) / 120), 0)
         cache_mb = round(48.2 + (self.cache_flushes * 0.1), 1)
 
+        import resource
+        rusage = resource.getrusage(resource.RUSAGE_SELF)
+        mem_bytes = rusage.ru_maxrss if platform.system() == 'Darwin' else rusage.ru_maxrss * 1024
+        real_proc_mem_mb = round(mem_bytes / (1024 * 1024), 2)
+
         return {
             "server": {
                 "node_id": self.node_id,
@@ -109,20 +114,24 @@ class ServerTelemetryManager:
                 "datacenter": self.datacenter,
                 "tier": self.tier,
                 "environment": "production-airgapped",
-                "os": "Ubuntu 24.04.1 LTS (Noble Numbat)",
-                "kernel": "Linux 6.8.0-31-generic x86_64",
-                "architecture": "x86_64 (AVX-512 enabled)",
+                "os": f"{platform.system()} {platform.release()}",
+                "kernel": platform.platform(),
+                "architecture": platform.machine(),
                 "python_runtime": f"CPython {self.python_version}",
                 "fastapi_version": "0.115.0",
-                "duckdb_version": "1.0.0 (Columnar Parquet Engine)",
+                "duckdb_version": "1.1.0 (Columnar Vector Engine)",
+                "process_resident_mem_mb": real_proc_mem_mb,
+                "host_cpu_count": os.cpu_count() or 4,
                 "uptime_seconds": uptime_sec,
                 "uptime_formatted": uptime_str,
-                "server_time": datetime.now(timezone.utc).isoformat()
+                "server_time": datetime.now(timezone.utc).isoformat(),
+                "mode": "Demonstration Range-Lite (Forensics Active)"
             },
             "hardware": {
+                "is_simulated_range": True,
                 "cpu": {
-                    "model": "AMD EPYC 9654 96-Core Processor (Dedicated)",
-                    "allocated_cores": 8,
+                    "model": f"{platform.processor() or 'Host CPU'} (Range Simulator)",
+                    "allocated_cores": os.cpu_count() or 4,
                     "utilization_percent": cpu_load,
                     "load_average": [round(cpu_load / 10, 2), 1.15, 0.98]
                 },
@@ -131,7 +140,8 @@ class ServerTelemetryManager:
                     "used_mb": mem_used_mb,
                     "free_mb": 16384 - mem_used_mb,
                     "utilization_percent": round((mem_used_mb / 16384) * 100, 1),
-                    "ecc_status": "Hardware ECC Enabled & Scrubbed"
+                    "process_resident_mb": real_proc_mem_mb,
+                    "ecc_status": "Software Managed (Air-Gapped Range)"
                 },
                 "storage": {
                     "total_gb": 512,
