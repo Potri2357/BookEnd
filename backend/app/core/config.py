@@ -39,4 +39,13 @@ class Settings(BaseModel):
     CISA_TRIAGE_HOURS: int = int(os.getenv("CISA_TRIAGE_HOURS", "72"))
     SIMULATED_BANNER: bool = os.getenv("SIMULATED_BANNER", "True").lower() in ("true", "1", "yes")
 
+    # AI Provider Settings (Hybrid: Gemini <-> Ollama <-> Deterministic)
+    AI_PROVIDER: str = os.getenv("AI_PROVIDER", "auto")
+    GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")
+    GEMINI_MODEL: str = os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
+    OLLAMA_BASE_URL: str = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
+    OLLAMA_MODEL: str = os.getenv("OLLAMA_MODEL", "llama3:latest")
+    AI_TIMEOUT_SECONDS: float = float(os.getenv("AI_TIMEOUT_SECONDS", "3.5"))
+
 settings = Settings()
+
