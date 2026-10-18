@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: bookend-backend
+    restart: unless-stopped
+    environment:
+      - PORT=8008
+      - HOST=0.0.0.0
+      - APP_NAME=BookEnd
+      - ENVIRONMENT=production
+      - DATABASE_PATH=/app/data/patchguard.duckdb
+      - AUDIT_LEDGER_PATH=/app/data/audit_ledger.json
+      - DEFAULT_LOOKBACK_DAYS=45
+      - COVERAGE_THRESHOLD=0.85
+      - SIMULATED_BANNER=true
+    volumes:
+      - bookend-storage:/app/data
+    ports:
+      - "8008:8008"
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    container_name: bookend-frontend
+    restart: unless-stopped
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+
+volumes:
+  bookend-storage:
