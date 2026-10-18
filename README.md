@@ -1,4 +1,4 @@
-# Patch Assurance (PatchGate)
+# BookEnd (PatchGate)
 > **Tagline:** Patch with proof.  
 > **Version:** 2.0.0 (MVP + V1 + V2 Complete Implementation)  
 > **Prepared for:** CyberForge 2026 (Mitigata)
@@ -6,7 +6,7 @@
 ---
 
 ## Executive Summary
-Patch Assurance closes the gap between *"we applied the patch"* and *"we are actually safe"*. When a known-exploited vulnerability is disclosed, Patch Assurance:
+BookEnd closes the gap between *"we applied the patch"* and *"we are actually safe"*. When a known-exploited vulnerability is disclosed, BookEnd:
 1. Matches and assesses affected assets across multi-tenant fleets.
 2. Retroactively hunts telemetry history (including pre-disclosure lookback) for prior compromise.
 3. Computes coverage provability and enforces that retention blind spots dictate **Cannot verify** instead of false cleanliness.

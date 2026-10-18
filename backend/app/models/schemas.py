@@ -1,5 +1,5 @@
 """
-Pydantic data models and schemas for Patch Assurance.
+Pydantic data models and schemas for BookEnd.
 """
 from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, Field
@@ -173,7 +173,7 @@ class ProofPackManifest(BaseModel):
     spec_hashes: List[str]
     evidence_hashes: List[str]
     limitations_statement: str
-    issuer: str = "Patch Assurance Trust Service"
+    issuer: str = "BookEnd Trust Service"
 
 class ProofPack(BaseModel):
     manifest: ProofPackManifest

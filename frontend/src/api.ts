@@ -3,7 +3,7 @@ import {
   ProofPack, QueueItem, Tenant
 } from './types'
 
-const BASE_URL = '/v1'
+const BASE_URL = (import.meta.env.VITE_API_BASE_URL || '/v1').replace(/\/+$/, '')
 
 export async function fetchTenants(): Promise<Tenant[]> {
   const res = await fetch(`${BASE_URL}/tenants`)
@@ -118,5 +118,20 @@ export async function togglePersistence() {
 
 export async function runEvaluationHarness() {
   const res = await fetch(`${BASE_URL}/evaluation/run`)
+  return res.json()
+}
+
+export async function fetchServerStatus() {
+  const res = await fetch(`${BASE_URL}/system/server-status`)
+  return res.json()
+}
+
+export async function flushServerCache() {
+  const res = await fetch(`${BASE_URL}/system/flush-cache`, { method: 'POST' })
+  return res.json()
+}
+
+export async function rotateServerKeys() {
+  const res = await fetch(`${BASE_URL}/system/rotate-keys`, { method: 'POST' })
   return res.json()
 }

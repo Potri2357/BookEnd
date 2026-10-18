@@ -23,7 +23,7 @@ export const ProcessTree: React.FC<ProcessTreeProps> = ({ evidence, hostName }) 
       phase: 'Initial Access',
       tag: 'T1190 Exploit Public-Facing App',
       severity: 'high',
-      cardClass: 'border-rose-200 bg-white text-[#113644]'
+      color: 'border-rose-200 bg-rose-50/70 text-rose-800'
     },
     {
       id: 'PT-02',
@@ -37,7 +37,7 @@ export const ProcessTree: React.FC<ProcessTreeProps> = ({ evidence, hostName }) 
       phase: 'Execution',
       tag: 'T1059 Command and Scripting Interpreter',
       severity: 'critical',
-      cardClass: 'border-rose-300 bg-rose-50/20 text-[#113644]'
+      color: 'border-rose-300 bg-rose-50 text-rose-900'
     },
     {
       id: 'PT-03',
@@ -51,7 +51,7 @@ export const ProcessTree: React.FC<ProcessTreeProps> = ({ evidence, hostName }) 
       phase: 'Persistence',
       tag: 'T1505.003 Web Shell',
       severity: 'critical',
-      cardClass: 'border-rose-400 bg-rose-50/40 text-rose-900 font-bold'
+      color: 'border-rose-400 bg-rose-100/80 text-rose-950 font-bold shadow-sm'
     },
     {
       id: 'PT-04',
@@ -65,7 +65,7 @@ export const ProcessTree: React.FC<ProcessTreeProps> = ({ evidence, hostName }) 
       phase: 'Command & Control',
       tag: 'T1071.001 Web Protocols C2',
       severity: 'high',
-      cardClass: 'border-amber-300 bg-amber-50/30 text-[#113644]'
+      color: 'border-amber-200 bg-amber-50 text-amber-900'
     },
     {
       id: 'PT-05',
@@ -79,7 +79,7 @@ export const ProcessTree: React.FC<ProcessTreeProps> = ({ evidence, hostName }) 
       phase: 'Persistence / Privilege Escalation',
       tag: 'T1136.001 Local Account Creation',
       severity: 'critical',
-      cardClass: 'border-rose-400 bg-rose-50/40 text-rose-900 font-bold'
+      color: 'border-rose-300 bg-rose-50 text-rose-900'
     }
   ]
 
@@ -93,10 +93,10 @@ export const ProcessTree: React.FC<ProcessTreeProps> = ({ evidence, hostName }) 
 
   if (!hasCompromise) {
     return (
-      <div className="p-12 text-center soc-card rounded-2xl border border-[#d2e8e5] shadow-xs">
-        <Cpu className="w-12 h-12 text-[#0d9488] mx-auto mb-3" />
-        <h3 className="text-base font-bold text-[#113644] font-mono">Normal Process Lineage</h3>
-        <p className="text-xs text-[#527482] mt-1 max-w-md mx-auto font-sans leading-relaxed">
+      <div className="p-12 text-center soc-card-elevated rounded-2xl border border-[#E1E9F2] bg-white">
+        <Cpu className="w-12 h-12 text-emerald-600 mx-auto mb-3 opacity-90" />
+        <h3 className="text-base font-bold text-[#111B36] font-mono">Normal Process Lineage</h3>
+        <p className="text-xs text-[#64748B] mt-1 max-w-md mx-auto font-sans leading-relaxed">
           Zero anomalous process executions, command injection child shells, or unauthorized file implants detected for host {hostName}.
         </p>
       </div>
@@ -105,7 +105,7 @@ export const ProcessTree: React.FC<ProcessTreeProps> = ({ evidence, hostName }) 
 
   return (
     <div className="space-y-4">
-      {/* Banner */}
+      {/* Falcon Command Bar Banner */}
       <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-900 flex items-center justify-between">
         <div className="flex items-center gap-2.5">
           <ShieldAlert className="w-4 h-4 text-rose-600 shrink-0" />
@@ -113,63 +113,63 @@ export const ProcessTree: React.FC<ProcessTreeProps> = ({ evidence, hostName }) 
             <strong>Correlated Process Hierarchy:</strong> Exploitation spawned directly from unauthenticated HTTP daemon, progressing through web shell persistence to root account installation.
           </span>
         </div>
-        <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-white border border-rose-300 text-rose-800 font-bold shrink-0">
+        <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-white border border-rose-200 text-rose-700 font-bold shrink-0">
           5-Stage Attack Chain
         </span>
       </div>
 
       {/* Hierarchical Process Tree Nodes */}
-      <div className="space-y-3 relative pl-6 border-l-2 border-rose-300 ml-4 font-mono text-xs">
+      <div className="space-y-3 relative pl-6 border-l-2 border-rose-400 ml-4 font-mono text-xs">
         {steps.map((step, idx) => (
           <div key={step.id} className="relative group">
             {/* Horizontal Branch Connector Line */}
             <div className="absolute -left-[26px] top-5 w-4 h-0.5 bg-rose-400" />
 
-            <div className={`p-4 rounded-xl border ${step.cardClass} shadow-xs transition hover:border-[#0d9488]`}>
+            <div className={`p-4 rounded-xl border ${step.color} shadow-sm transition hover:border-[#7194B7] soc-card-interactive`}>
               <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
                 <div className="flex items-center gap-2.5">
-                  <span className="text-[10px] px-2 py-0.5 rounded bg-[#143e4c] text-white font-black">
+                  <span className="text-[10px] px-2 py-0.5 rounded bg-[#E6EEF7] text-[#111B36] font-black border border-[#E1E9F2]">
                     0{idx + 1}
                   </span>
-                  <span className="font-bold text-[#113644] text-xs">{step.title}</span>
-                  <span className="text-[11px] text-[#557784]">
-                    Process: <strong className="text-[#143e4c]">{step.process}</strong>
+                  <span className="font-bold text-[#111B36] text-xs">{step.title}</span>
+                  <span className="text-[11px] text-[#64748B]">
+                    Process: <strong className="text-[#111B36]">{step.process}</strong>
                   </span>
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <span className="text-[10px] px-2 py-0.5 rounded bg-[#f0f7f6] border border-[#d2e8e5] text-[#254d5b]">
+                  <span className="text-[10px] px-2 py-0.5 rounded bg-white border border-[#E1E9F2] text-[#64748B]">
                     {step.tag}
                   </span>
-                  <span className="text-[9px] px-1.5 py-0.2 rounded font-black uppercase tracking-wider bg-rose-100 text-rose-800 border border-rose-200">
+                  <span className="text-[9px] px-1.5 py-0.2 rounded font-black uppercase tracking-wider bg-rose-100 text-rose-700 border border-rose-200">
                     {step.severity}
                   </span>
                 </div>
               </div>
 
               {/* Context bar */}
-              <div className="flex items-center gap-3 text-[10px] text-[#557784] mb-2">
-                <span>User: <strong className="text-amber-800 uppercase font-semibold">{step.user}</strong></span>
+              <div className="flex items-center gap-3 text-[10px] text-[#64748B] mb-2">
+                <span>User: <strong className="text-amber-700 uppercase">{step.user}</strong></span>
                 <span>•</span>
-                <span>PID: <strong className="text-[#143e4c]">{step.pid || 'N/A'}</strong></span>
+                <span>PID: <strong className="text-[#111B36]">{step.pid || 'N/A'}</strong></span>
                 <span>•</span>
-                <span>PPID: <strong className="text-[#143e4c]">{step.ppid || 'N/A'}</strong></span>
+                <span>PPID: <strong className="text-[#111B36]">{step.ppid || 'N/A'}</strong></span>
                 <span>•</span>
-                <span>Checksum: <code className="text-[#648795]">{step.hash}</code></span>
+                <span>Checksum: <code className="text-[#64748B]">{step.hash}</code></span>
               </div>
 
               {/* Command Box */}
-              <div className="bg-[#143e4c] p-2.5 rounded-lg text-[11px] text-[#a7f3d0] flex items-center justify-between gap-2 shadow-xs">
+              <div className="bg-white p-2.5 rounded-lg border border-[#E1E9F2] text-[11px] text-[#111B36] flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2 overflow-x-auto select-all">
-                  <Terminal className="w-3.5 h-3.5 text-[#2dd4bf] shrink-0" />
-                  <code className="text-[#e6f4f3] font-mono">{step.cmd}</code>
+                  <Terminal className="w-3.5 h-3.5 text-[#7194B7] shrink-0" />
+                  <code className="text-[#111B36]">{step.cmd}</code>
                 </div>
                 <button
                   onClick={() => copyToClipboard(step.cmd, step.id)}
-                  className="px-2 py-1 rounded bg-[#205161] hover:bg-[#2b687c] text-white text-[10px] shrink-0 transition"
+                  className="px-2 py-1 rounded bg-[#F7FAFD] border border-[#E1E9F2] hover:bg-[#E6EEF7] text-[#64748B] text-[10px] shrink-0 transition"
                   title="Copy command line"
                 >
-                  {copiedId === step.id ? <Check className="w-3 h-3 text-[#5eead4]" /> : <Copy className="w-3 h-3" />}
+                  {copiedId === step.id ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
                 </button>
               </div>
             </div>

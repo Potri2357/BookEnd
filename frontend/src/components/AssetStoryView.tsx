@@ -49,7 +49,7 @@ export const AssetStoryView: React.FC<AssetStoryViewProps> = ({
   const [chatHistory, setChatHistory] = useState<Array<{ sender: string; text: string; citations?: string[] }>>([
     {
       sender: 'assistant',
-      text: `Patch Assurance Evidence Assistant active for ${story.asset.host_name}. Telemetry reasoning strictly cited from case events.`,
+      text: `BookEnd Evidence Assistant active for ${story.asset.host_name}. Telemetry reasoning strictly cited from case events.`,
       citations: []
     }
   ])
@@ -155,9 +155,9 @@ export const AssetStoryView: React.FC<AssetStoryViewProps> = ({
       <div className="flex items-center justify-between">
         <button
           onClick={onBack}
-          className="flex items-center gap-1.5 text-xs font-mono font-bold text-[#527977] hover:text-[#0d9488] transition"
+          className="flex items-center gap-1.5 text-xs font-mono font-bold text-[#64748B] hover:text-[#7194B7] transition"
         >
-          <ArrowLeft className="w-4 h-4 text-[#0d9488]" /> Back to Queue
+          <ArrowLeft className="w-4 h-4 text-[#7194B7]" /> Back to Queue
         </button>
 
         <div className="flex items-center gap-2.5">
@@ -175,47 +175,47 @@ export const AssetStoryView: React.FC<AssetStoryViewProps> = ({
           <button
             onClick={handleOpenProofPack}
             disabled={isOpeningPack}
-            className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-white hover:bg-[#f2f7f7] text-[#113644] border border-[#cde5e3] hover:border-[#0d9488] font-mono text-xs font-bold transition active:scale-95 shadow-sm"
+            className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-white hover:bg-[#F7FAFD] text-[#111B36] border border-[#E1E9F2] hover:border-[#7194B7] font-mono text-xs font-bold transition active:scale-95 shadow-sm"
           >
-            <ShieldCheck className="w-4 h-4 text-[#0d9488]" />
+            <ShieldCheck className="w-4 h-4 text-emerald-600" />
             <span>{isOpeningPack ? 'Loading Certificate...' : 'Ed25519 Cryptographic Proof Pack'}</span>
           </button>
         </div>
       </div>
 
       {/* Hero Asset Investigation Banner */}
-      <div className={`p-5 rounded-2xl bg-white border transition shadow-sm ${
+      <div className={`p-5 rounded-2xl soc-card-elevated border transition ${
         isComp
-          ? 'border-rose-300 bg-rose-50/25'
+          ? 'border-rose-300 bg-rose-50/50'
           : isCannotVerify
-          ? 'border-purple-300 bg-purple-50/25'
-          : 'border-[#cde5e3]'
+          ? 'border-purple-300 bg-purple-50/50'
+          : 'border-[#E1E9F2] bg-white'
       }`}>
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5">
           <div className="space-y-1.5">
             <div className="flex items-center gap-3 flex-wrap">
-              <h1 className="text-2xl font-black tracking-tight text-[#113644] font-mono flex items-center gap-2.5">
-                <Terminal className="w-6 h-6 text-[#0d9488]" />
+              <h1 className="text-2xl font-black tracking-tight text-[#111B36] font-mono flex items-center gap-2.5">
+                <Terminal className="w-6 h-6 text-[#7194B7]" />
                 {story.asset.host_name}
               </h1>
-              <span className={`px-2.5 py-0.5 rounded text-[10px] font-mono font-bold uppercase tracking-wider ${
+              <span className={`px-2.5 py-0.5 rounded text-[10px] font-mono font-black uppercase tracking-wider ${
                 story.asset.exposure_tier === 'emergency'
-                  ? 'bg-rose-100 text-rose-700 border border-rose-300'
-                  : 'bg-amber-100 text-amber-800 border border-amber-300'
+                  ? 'bg-red-100 text-red-700 border border-red-200'
+                  : 'bg-amber-100 text-amber-700 border border-amber-200'
               }`}>
                 {story.asset.exposure_tier} Exposure Tier
               </span>
-              <span className="text-xs font-mono text-[#527977]">
-                IP: <strong className="text-[#113644] font-bold">{story.asset.ip_address}</strong>
+              <span className="text-xs font-mono text-[#64748B]">
+                IP: <strong className="text-[#111B36]">{story.asset.ip_address}</strong>
               </span>
             </div>
 
-            <div className="flex items-center gap-4 text-xs font-mono text-[#527977] flex-wrap">
-              <span>Product: <strong className="text-[#0d9488] font-bold">{story.asset.product} {story.asset.version}</strong></span>
+            <div className="flex items-center gap-4 text-xs font-mono text-[#64748B] flex-wrap">
+              <span>Product: <strong className="text-[#7194B7]">{story.asset.product} {story.asset.version}</strong></span>
               <span>•</span>
-              <span>Tenant: <strong className="text-[#113644] capitalize font-bold">{story.asset.tenant_id.replace('-', ' ')}</strong></span>
+              <span>Tenant: <strong className="text-[#111B36] capitalize">{story.asset.tenant_id.replace('-', ' ')}</strong></span>
               <span>•</span>
-              <span>Criticality: <strong className="text-amber-800 font-bold uppercase">{story.asset.criticality}</strong></span>
+              <span>Criticality: <strong className="text-amber-700 uppercase">{story.asset.criticality}</strong></span>
               <span>•</span>
               <span>Owner: {story.asset.owner}</span>
             </div>
@@ -223,8 +223,8 @@ export const AssetStoryView: React.FC<AssetStoryViewProps> = ({
 
           <div className="flex items-center gap-3 shrink-0 flex-wrap">
             {/* Verdict Badge */}
-            <div className="p-3 rounded-xl bg-[#f8fbfb] border border-[#cde5e3] text-right font-mono min-w-[200px]">
-              <div className="text-[10px] text-[#527977] uppercase tracking-wider font-bold">Compromise Verdict</div>
+            <div className="p-3 rounded-xl bg-[#F7FAFD] border border-[#E1E9F2] text-right font-mono min-w-[200px]">
+              <div className="text-[10px] text-[#64748B] uppercase tracking-wider font-bold">Compromise Verdict</div>
               <div className="flex items-center justify-end gap-2 mt-1">
                 {isComp ? (
                   <ShieldAlert className="w-5 h-5 text-rose-600 animate-pulse" />
@@ -234,27 +234,27 @@ export const AssetStoryView: React.FC<AssetStoryViewProps> = ({
                   <ShieldCheck className="w-5 h-5 text-emerald-600" />
                 )}
                 <span className={`text-base font-black ${
-                  isComp ? 'text-rose-700' : isCannotVerify ? 'text-purple-700' : 'text-emerald-700'
+                  isComp ? 'text-rose-600' : isCannotVerify ? 'text-purple-600' : 'text-emerald-600'
                 }`}>
                   {story.verdict.state}
                 </span>
               </div>
-              <div className="text-[10px] text-[#527977] mt-0.5">
-                Confidence: <strong className="text-[#113644] uppercase font-bold">{story.verdict.confidence}</strong>
+              <div className="text-[10px] text-[#64748B] mt-0.5">
+                Confidence: <strong className="text-[#111B36] uppercase">{story.verdict.confidence}</strong>
               </div>
             </div>
 
             {/* Countdown Clock */}
-            <div className="p-3 rounded-xl bg-[#f8fbfb] border border-[#cde5e3] text-right font-mono min-w-[170px]">
-              <div className="text-[10px] text-[#527977] uppercase tracking-wider font-bold flex items-center justify-end gap-1">
-                <Clock className="w-3.5 h-3.5 text-[#0d9488]" /> {story.clock.profile}
+            <div className="p-3 rounded-xl bg-[#F7FAFD] border border-[#E1E9F2] text-right font-mono min-w-[170px]">
+              <div className="text-[10px] text-[#64748B] uppercase tracking-wider font-bold flex items-center justify-end gap-1">
+                <Clock className="w-3.5 h-3.5 text-[#7194B7]" /> {story.clock.profile}
               </div>
               <div className={`text-lg font-black mt-1 ${
-                story.clock.is_breached ? 'text-rose-600' : 'text-amber-700'
+                story.clock.is_breached ? 'text-red-600' : 'text-amber-700'
               }`}>
                 {formatSeconds(story.clock.seconds_remaining)}
               </div>
-              <div className="text-[10px] text-[#527977] mt-0.5">
+              <div className="text-[10px] text-[#64748B] mt-0.5">
                 Target: {story.clock.target_tier}
               </div>
             </div>
@@ -267,7 +267,7 @@ export const AssetStoryView: React.FC<AssetStoryViewProps> = ({
         {/* Left Column (8 cols) */}
         <div className="lg:col-span-8 space-y-4">
           {/* Investigative View Tabs */}
-          <div className="bg-white p-1 rounded-xl flex items-center gap-1 border border-[#cde5e3] text-xs font-mono shadow-sm">
+          <div className="soc-card p-1 rounded-xl flex items-center gap-1 border border-[#E1E9F2] text-xs font-mono bg-white">
             {[
               { id: 'timeline', label: 'Timeline Lanes', icon: Activity, count: story.evidence.length },
               { id: 'process_tree', label: 'Process Hierarchy', icon: Cpu },
@@ -283,23 +283,21 @@ export const AssetStoryView: React.FC<AssetStoryViewProps> = ({
                   onClick={() => setActiveTab(tab.id as any)}
                   className={`flex items-center gap-2 px-3 py-2 rounded-lg transition font-medium ${
                     isActive
-                      ? 'bg-[#0d9488] text-white font-bold shadow-sm'
-                      : 'text-[#527977] hover:text-[#113644] hover:bg-[#f2f7f7]'
+                      ? 'bg-[#E6EEF7] text-[#111B36] font-bold border border-[#7194B7] shadow-sm'
+                      : 'text-[#64748B] hover:text-[#111B36] hover:bg-[#F7FAFD]'
                   }`}
                 >
-                  <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-white' : 'text-[#527977]'}`} />
+                  <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-[#7194B7]' : 'text-[#64748B]'}`} />
                   <span>{tab.label}</span>
                   {tab.count !== undefined && (
-                    <span className={`text-[10px] px-1.5 py-0.2 rounded font-mono font-bold ${
-                      isActive ? 'bg-white/20 text-white' : 'bg-[#eaf4f3] text-[#0d9488]'
+                    <span className={`text-[10px] px-1.5 py-0.2 rounded font-mono ${
+                      isActive ? 'bg-[#7194B7] text-white font-bold' : 'bg-[#E6EEF7] text-[#64748B]'
                     }`}>
                       {tab.count}
                     </span>
                   )}
                   {tab.badge && (
-                    <span className={`text-[9px] px-1.5 py-0.2 rounded font-mono font-bold ${
-                      isActive ? 'bg-white/20 text-white' : 'bg-rose-100 text-rose-700'
-                    }`}>
+                    <span className="text-[9px] px-1.5 py-0.2 rounded bg-rose-100 text-rose-700 border border-rose-200 font-mono font-bold">
                       {tab.badge}
                     </span>
                   )}
@@ -310,87 +308,94 @@ export const AssetStoryView: React.FC<AssetStoryViewProps> = ({
 
           {/* TAB 1: BESPOKE VISUAL TIMELINE LANES */}
           {activeTab === 'timeline' && (
-            <div className="bg-white p-5 rounded-2xl border border-[#cde5e3] space-y-5 font-mono text-xs shadow-sm">
-              <div className="flex items-center justify-between border-b border-[#e5f0ef] pb-3">
-                <div className="flex items-center gap-2 font-bold text-[#113644]">
-                  <Activity className="w-4 h-4 text-[#0d9488]" />
+            <div className="soc-card-elevated p-5 rounded-2xl border border-[#E1E9F2] bg-white space-y-5 font-mono text-xs">
+              <div className="flex items-center justify-between border-b border-[#E1E9F2] pb-3">
+                <div className="flex items-center gap-2 font-bold text-[#111B36]">
+                  <Activity className="w-4 h-4 text-[#7194B7]" />
                   <span>Multi-Lane Telemetry & Attack Timeline (45-Day Scope)</span>
                 </div>
-                <div className="text-[11px] text-[#527977] flex items-center gap-3">
+                <div className="text-[11px] text-[#64748B] flex items-center gap-3">
                   <span className="flex items-center gap-1.5">
-                    <span className="w-2.5 h-0.5 border-t-2 border-dashed border-[#0d9488]" />
-                    <span>Advisory Disclosed: <strong className="text-[#113644]">2026-10-09</strong></span>
+                    <span className="w-2.5 h-0.5 border-t-2 border-dashed border-[#7194B7]" />
+                    <span>Advisory Disclosed: <strong>2026-10-09</strong></span>
                   </span>
-                  <span className="text-[#cde5e3]">|</span>
-                  <span className="text-amber-700">First In-The-Wild Hit: <strong className="text-amber-800">2026-10-04</strong></span>
+                  <span className="text-[#C1D0E2]">|</span>
+                  <span className="text-amber-700">First In-The-Wild Hit: <strong>2026-10-04</strong></span>
                 </div>
               </div>
 
               {/* Time Ruler Bar */}
               <div className="relative pt-2">
-                <div className="flex justify-between text-[10px] text-[#527977] font-mono uppercase pb-1 px-1">
+                <div className="flex justify-between text-[10px] text-[#64748B] font-mono uppercase pb-1 px-1">
                   <span>-45d (Aug 25)</span>
                   <span>-30d</span>
-                  <span className="text-rose-700 font-bold">-14d [FIRST HIT]</span>
-                  <span className="text-[#0d9488] font-bold">-9d [DISCLOSED]</span>
+                  <span className="text-rose-600 font-bold">-14d [FIRST HIT]</span>
+                  <span className="text-[#7194B7] font-bold">-9d [DISCLOSED]</span>
                   <span>-7d</span>
-                  <span className="text-[#113644] font-bold">NOW (Triage)</span>
+                  <span className="text-[#111B36] font-bold">NOW (Triage)</span>
                 </div>
-                <div className="h-1.5 bg-[#eaf4f3] rounded-full border border-[#cde5e3] relative">
+                <div className="h-1.5 bg-[#E6EEF7] rounded-full border border-[#E1E9F2] relative">
                   <div className="absolute left-[68.8%] top-[-2px] bottom-[-2px] w-1 bg-rose-500 rounded-full" title="First Exploit Hit (-14d)" />
-                  <div className="absolute left-[80%] top-[-4px] bottom-[-4px] w-1 bg-[#0d9488] rounded-full" title="Public Advisory Disclosed (-9d)" />
+                  <div className="absolute left-[80%] top-[-4px] bottom-[-4px] w-1 bg-[#7194B7] rounded-full" title="Public Advisory Disclosed (-9d)" />
                 </div>
               </div>
 
               {/* Timeline Lanes Container */}
               <div className="space-y-4 pt-1">
                 {/* Lane 1: Flaw Exposure Window */}
-                <div className="space-y-1">
-                  <div className="flex justify-between text-[10px] text-[#527977] uppercase font-bold tracking-wider">
+                <div className="space-y-1.5">
+                  <div className="flex justify-between text-[10px] text-[#64748B] uppercase font-bold tracking-wider font-mono">
                     <span>LANE 1: VULNERABILITY EXPOSURE SPAN</span>
-                    <span className="text-[#8da8a6]">Firmware: EdgeGate VPN 9.1.4</span>
+                    <span className="text-[#64748B]">Firmware: EdgeGate VPN 9.1.4</span>
                   </div>
-                  <div className="relative h-7 bg-[#f8fbfb] rounded-xl border border-[#cde5e3] overflow-hidden flex items-center px-3">
-                    <div className="absolute inset-y-0 left-0 w-[80%] bg-gradient-to-r from-rose-100/70 via-amber-100/70 to-transparent flex items-center px-3 text-[10px] text-[#113644] font-semibold">
+                  <div className="relative h-8 bg-[#E6EEF7]/50 rounded-xl border border-[#E1E9F2] overflow-hidden flex items-center px-3">
+                    <div className="absolute inset-y-0 left-0 w-[80%] bg-[#E6EEF7] flex items-center px-3 text-[11px] font-medium text-[#111B36]">
                       Unpatched Vulnerable Window (45 Days Telemetry History)
                     </div>
                     {/* Vertical marker for Advisory date */}
-                    <div className="absolute left-[80%] inset-y-0 w-0.5 border-l-2 border-dashed border-[#0d9488] z-10" />
+                    <div className="absolute left-[80%] inset-y-0 w-0.5 border-l-2 border-dashed border-[#7194B7] z-10" />
                   </div>
                 </div>
 
                 {/* Lane 2: Matched Forensic Markers */}
-                <div className="space-y-1">
-                  <div className="flex justify-between text-[10px] text-[#527977] uppercase font-bold tracking-wider">
+                <div className="space-y-1.5">
+                  <div className="flex justify-between text-[10px] text-[#64748B] uppercase font-bold tracking-wider font-mono">
                     <span>LANE 2: NUMBERED ATTACK PROGRESSION MARKERS</span>
-                    <span className="text-rose-700 font-bold">{story.evidence.length} Correlated Artifacts</span>
+                    <span className="text-[#111B36] font-bold">{story.evidence.length} Correlated Artifacts</span>
                   </div>
-                  <div className="relative h-14 bg-[#f8fbfb] rounded-xl border border-[#cde5e3] flex items-center px-4">
-                    <div className="absolute left-[80%] inset-y-0 w-0.5 border-l-2 border-dashed border-[#0d9488] z-10" />
+                  <div className="relative min-h-[64px] bg-[#F7FAFD] rounded-xl border border-[#E1E9F2] flex items-center px-3 py-2.5 overflow-x-auto">
+                    {/* Vertical marker for Advisory date */}
+                    <div className="absolute left-[80%] inset-y-0 w-0.5 border-l-2 border-dashed border-[#7194B7] z-10 pointer-events-none" />
 
                     {story.evidence.length === 0 ? (
-                      <div className="text-[#527977] text-[11px] italic flex items-center gap-2">
-                        <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                      <div className="text-[#64748B] text-xs italic flex items-center gap-2">
+                        <CheckCircle2 className="w-4 h-4 text-[#047857]" />
                         <span>Zero exploit artifacts detected across all queries</span>
                       </div>
                     ) : (
-                      <div className="w-full flex items-center justify-between relative">
+                      <div className="flex items-center gap-2 relative z-0 flex-nowrap pr-6">
                         {story.evidence.map((ev, idx) => {
                           const isSelected = selectedEvidence?.event_id === ev.event_id
                           return (
                             <button
                               key={ev.event_id}
                               onClick={() => setSelectedEvidence(ev)}
-                              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-mono font-bold transition ${
+                              className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-mono transition cursor-pointer shrink-0 border ${
                                 isSelected
-                                  ? 'bg-[#0d9488] text-white shadow-md scale-105'
-                                  : 'bg-rose-50 text-rose-800 border border-rose-300 hover:border-rose-400 hover:bg-rose-100'
+                                  ? 'bg-[#7194B7] text-white border-[#5E82A7] shadow-xs'
+                                  : 'bg-white hover:bg-[#E6EEF7] text-[#111B36] border-[#E1E9F2] hover:border-[#84A3C4] shadow-2xs'
                               }`}
                             >
-                              <span className="w-4 h-4 rounded-full bg-[#143e4c] text-white flex items-center justify-center text-[10px] font-black">
+                              <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 ${
+                                isSelected
+                                  ? 'bg-white text-[#7194B7]'
+                                  : 'bg-[#E6EEF7] text-[#5E82A7]'
+                              }`}>
                                 {idx + 1}
                               </span>
-                              <span>{ev.signal_class.replace('_', ' ').toUpperCase()}</span>
+                              <span className="font-semibold whitespace-nowrap">
+                                {ev.signal_class.replace('_', ' ').toUpperCase()}
+                              </span>
                             </button>
                           )
                         })}
@@ -401,9 +406,9 @@ export const AssetStoryView: React.FC<AssetStoryViewProps> = ({
 
                 {/* Lane 3: Per-Source Retention Coverage */}
                 <div className="space-y-1.5">
-                  <div className="flex justify-between text-[10px] text-[#527977] uppercase font-bold tracking-wider">
+                  <div className="flex justify-between text-[10px] text-[#64748B] uppercase font-bold tracking-wider font-mono">
                     <span>LANE 3: TELEMETRY RETENTION PER LOG SOURCE</span>
-                    <span className="text-emerald-700 font-bold">Policy: &gt;= 85% Provability</span>
+                    <span className="text-[#047857] font-semibold">Policy: &gt;= 85% Provability</span>
                   </div>
 
                   <div className="space-y-1.5">
@@ -411,29 +416,27 @@ export const AssetStoryView: React.FC<AssetStoryViewProps> = ({
                       const pct = Math.round(src.coverage_ratio * 100)
                       const isAdequate = src.coverage_ratio >= 0.85
                       return (
-                        <div key={src.source_type} className="flex items-center gap-3">
-                          <span className="w-20 font-bold uppercase text-[10px] text-[#527977] text-right font-mono">
+                        <div key={src.source_type} className="flex items-center gap-3 text-xs">
+                          <span className="w-20 font-bold uppercase text-[10px] text-[#64748B] text-right font-mono">
                             {src.source_type}:
                           </span>
-                          <div className="flex-1 h-3.5 bg-[#eaf4f3] rounded-lg border border-[#cde5e3] overflow-hidden relative">
+                          <div className="flex-1 h-3.5 bg-[#E6EEF7] rounded-lg border border-[#E1E9F2] overflow-hidden relative">
                             <div
                               className={`h-full rounded-lg transition-all ${
-                                isAdequate ? 'bg-[#0d9488]' : 'bg-purple-600'
+                                isAdequate ? 'bg-[#7194B7]' : 'bg-[#C1D0E2]'
                               }`}
                               style={{ width: `${pct}%` }}
                             />
                             {!isAdequate && (
                               <div
-                                className="absolute inset-y-0 right-0 bg-red-100 border-l border-red-400 flex items-center justify-center text-[8px] text-red-800 px-1 font-mono font-bold"
+                                className="absolute inset-y-0 right-0 bg-[#FEE2E2] border-l border-[#FECACA] flex items-center justify-center text-[8px] text-[#DC2626] px-1 font-mono font-bold"
                                 style={{ width: `${100 - pct}%` }}
                               >
                                 RETENTION GAP
                               </div>
                             )}
                           </div>
-                          <span className={`w-16 text-right text-[10px] font-mono font-bold ${
-                            isAdequate ? 'text-[#113644]' : 'text-purple-700'
-                          }`}>
+                          <span className="w-20 text-right text-[10px] font-mono font-bold text-[#111B36]">
                             {src.available_days}/45d ({pct}%)
                           </span>
                         </div>
@@ -445,28 +448,28 @@ export const AssetStoryView: React.FC<AssetStoryViewProps> = ({
 
               {/* Selected Evidence Detail Drawer */}
               {selectedEvidence && (
-                <div className="mt-4 p-4 rounded-xl bg-[#f8fbfb] border border-[#bfe0dc] space-y-2.5">
-                  <div className="flex items-center justify-between text-xs border-b border-[#e5f0ef] pb-2">
-                    <span className="font-bold text-[#0d9488] flex items-center gap-2">
-                      <Terminal className="w-4 h-4 text-[#0d9488]" />
+                <div className="mt-4 p-4 rounded-xl bg-[#F7FAFD] border border-[#7194B7]/40 space-y-2.5">
+                  <div className="flex items-center justify-between text-xs border-b border-[#E1E9F2] pb-2">
+                    <span className="font-bold text-[#7194B7] flex items-center gap-2">
+                      <Terminal className="w-4 h-4 text-[#7194B7]" />
                       EVENT INSPECTOR: [{selectedEvidence.event_id}]
                     </span>
-                    <span className="text-[#527977] font-mono text-[11px]">{selectedEvidence.timestamp} UTC</span>
+                    <span className="text-[#64748B] font-mono text-[11px]">{selectedEvidence.timestamp} UTC</span>
                   </div>
 
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-[11px]">
-                    <div>Source: <strong className="text-[#113644] uppercase font-bold">{selectedEvidence.source_type}</strong></div>
-                    <div>Action: <strong className="text-[#113644] font-bold">{selectedEvidence.event_action}</strong></div>
-                    <div>Signal Class: <strong className="text-rose-700 uppercase font-bold">{selectedEvidence.signal_class}</strong></div>
-                    <div>Confidence: <strong className="text-amber-800 uppercase font-bold">{selectedEvidence.confidence}</strong></div>
+                    <div>Source: <strong className="text-[#111B36] uppercase">{selectedEvidence.source_type}</strong></div>
+                    <div>Action: <strong className="text-[#111B36]">{selectedEvidence.event_action}</strong></div>
+                    <div>Signal Class: <strong className="text-[#111B36] uppercase">{selectedEvidence.signal_class}</strong></div>
+                    <div>Confidence: <strong className="text-[#5E82A7] uppercase">{selectedEvidence.confidence}</strong></div>
                   </div>
 
                   {selectedEvidence.details.process_cmdline && (
-                    <div className="p-2.5 rounded-lg bg-white border border-[#cde5e3] text-[11px] text-[#0d9488] flex items-center justify-between gap-2 shadow-sm">
-                      <code className="select-all truncate font-semibold">{selectedEvidence.details.process_cmdline}</code>
+                    <div className="p-2.5 rounded-lg bg-white border border-[#E1E9F2] text-[11px] text-[#111B36] flex items-center justify-between gap-2">
+                      <code className="select-all truncate">{selectedEvidence.details.process_cmdline}</code>
                       <button
                         onClick={() => copyCode(selectedEvidence.details.process_cmdline)}
-                        className="px-2 py-0.5 rounded bg-[#f2f7f7] hover:bg-[#eaf4f3] text-[#113644] text-[10px] font-bold border border-[#cde5e3]"
+                        className="px-2 py-0.5 rounded bg-[#F7FAFD] hover:bg-[#E6EEF7] border border-[#E1E9F2] text-[#64748B] text-[10px]"
                       >
                         {copiedCmd ? 'Copied' : 'Copy'}
                       </button>
@@ -474,11 +477,11 @@ export const AssetStoryView: React.FC<AssetStoryViewProps> = ({
                   )}
 
                   {selectedEvidence.details.url_path && (
-                    <div className="p-2.5 rounded-lg bg-white border border-[#cde5e3] text-[11px] text-rose-700 flex items-center justify-between gap-2 shadow-sm">
-                      <code className="select-all truncate font-semibold">{selectedEvidence.details.http_method} {selectedEvidence.details.url_path}</code>
+                    <div className="p-2.5 rounded-lg bg-white border border-[#E1E9F2] text-[11px] text-[#111B36] flex items-center justify-between gap-2">
+                      <code className="select-all truncate">{selectedEvidence.details.http_method} {selectedEvidence.details.url_path}</code>
                       <button
                         onClick={() => copyCode(`${selectedEvidence.details.http_method} ${selectedEvidence.details.url_path}`)}
-                        className="px-2 py-0.5 rounded bg-[#f2f7f7] hover:bg-[#eaf4f3] text-[#113644] text-[10px] font-bold border border-[#cde5e3]"
+                        className="px-2 py-0.5 rounded bg-[#F7FAFD] hover:bg-[#E6EEF7] border border-[#E1E9F2] text-[#64748B] text-[10px]"
                       >
                         {copiedCmd ? 'Copied' : 'Copy'}
                       </button>
@@ -496,18 +499,18 @@ export const AssetStoryView: React.FC<AssetStoryViewProps> = ({
 
           {/* TAB 3: RAW EVIDENCE */}
           {activeTab === 'evidence' && (
-            <div className="bg-white p-5 rounded-2xl border border-[#cde5e3] space-y-3 font-mono text-xs shadow-sm">
-              <div className="flex items-center justify-between border-b border-[#e5f0ef] pb-3">
-                <span className="font-bold text-[#113644] flex items-center gap-2">
-                  <Terminal className="w-4 h-4 text-[#0d9488]" />
+            <div className="soc-card-elevated p-5 rounded-2xl border border-[#E1E9F2] bg-white space-y-3 font-mono text-xs">
+              <div className="flex items-center justify-between border-b border-[#E1E9F2] pb-3">
+                <span className="font-bold text-[#111B36] flex items-center gap-2">
+                  <Terminal className="w-4 h-4 text-[#7194B7]" />
                   Forensic Telemetry Ledger ({story.evidence.length} Records)
                 </span>
-                <span className="text-[11px] text-[#527977]">Read-Only DuckDB Stream</span>
+                <span className="text-[11px] text-[#64748B]">Read-Only DuckDB Stream</span>
               </div>
 
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
-                  <thead className="bg-[#f8fbfb] text-[#527977] text-[10px] uppercase border-b border-[#e5f0ef]">
+                  <thead className="bg-[#E6EEF7] text-[#111B36] text-[10px] uppercase border-b border-[#E1E9F2]">
                     <tr>
                       <th className="p-2.5">EVENT ID</th>
                       <th className="p-2.5">TIMESTAMP</th>
@@ -516,14 +519,14 @@ export const AssetStoryView: React.FC<AssetStoryViewProps> = ({
                       <th className="p-2.5">TELEMETRY DETAIL</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[#e5f0ef] text-[11px]">
+                  <tbody className="divide-y divide-[#E1E9F2] text-[11px]">
                     {story.evidence.map((ev) => (
-                      <tr key={ev.event_id} className="hover:bg-[#f2f7f7] transition">
-                        <td className="p-2.5 font-bold text-[#0d9488]">{ev.event_id}</td>
-                        <td className="p-2.5 text-[#113644]">{ev.timestamp}</td>
-                        <td className="p-2.5 uppercase text-[#527977] font-semibold">{ev.source_type}</td>
-                        <td className="p-2.5 font-bold text-rose-700">{ev.signal_class}</td>
-                        <td className="p-2.5 text-[#113644] select-all max-w-sm truncate">
+                      <tr key={ev.event_id} className="hover:bg-[#F7FAFD]">
+                        <td className="p-2.5 font-bold text-[#7194B7]">{ev.event_id}</td>
+                        <td className="p-2.5 text-[#111B36]">{ev.timestamp}</td>
+                        <td className="p-2.5 uppercase text-[#64748B]">{ev.source_type}</td>
+                        <td className="p-2.5 font-bold text-[#111B36]">{ev.signal_class}</td>
+                        <td className="p-2.5 text-[#111B36] select-all max-w-sm truncate">
                           {ev.details.process_cmdline || ev.details.url_path || ev.details.file_path || ev.event_action}
                         </td>
                       </tr>
@@ -536,13 +539,13 @@ export const AssetStoryView: React.FC<AssetStoryViewProps> = ({
 
           {/* TAB 4: PLAYBOOK & CLEANUP */}
           {activeTab === 'playbook' && (
-            <div className="bg-white p-5 rounded-2xl border border-[#cde5e3] space-y-4 font-mono text-xs shadow-sm">
-              <div className="flex items-center justify-between border-b border-[#e5f0ef] pb-3">
+            <div className="soc-card-elevated p-5 rounded-2xl border border-[#E1E9F2] bg-white space-y-4 font-mono text-xs">
+              <div className="flex items-center justify-between border-b border-[#E1E9F2] pb-3">
                 <div>
-                  <h3 className="font-bold text-[#113644] flex items-center gap-2 text-sm">
-                    <Shield className="w-4 h-4 text-[#0d9488]" /> Containment & Remediation Playbook
+                  <h3 className="font-bold text-[#111B36] flex items-center gap-2 text-sm">
+                    <Shield className="w-4 h-4 text-[#7194B7]" /> Containment & Remediation Playbook
                   </h3>
-                  <p className="text-[11px] text-[#527977] mt-0.5 font-sans">
+                  <p className="text-[11px] text-[#64748B] mt-0.5 font-sans">
                     Guarantees execution of hygiene actions (session termination, implant removal) that patching alone leaves behind.
                   </p>
                 </div>
@@ -555,13 +558,13 @@ export const AssetStoryView: React.FC<AssetStoryViewProps> = ({
                     <div
                       key={step.step_id}
                       className={`p-4 rounded-xl border transition ${
-                        isDone ? 'bg-emerald-50/70 border-emerald-300' : 'bg-[#f8fbfb] border border-[#cde5e3]'
+                        isDone ? 'bg-emerald-50 border-emerald-200' : 'bg-[#F7FAFD] border-[#E1E9F2]'
                       }`}
                     >
                       <div className="flex items-center justify-between gap-2 mb-1.5">
-                        <div className="flex items-center gap-2 font-bold text-[#113644]">
+                        <div className="flex items-center gap-2 font-bold text-[#111B36]">
                           <span className={`px-2 py-0.5 rounded text-[10px] uppercase font-bold font-mono ${
-                            step.phase === 'containment' ? 'bg-rose-100 text-rose-700 border border-rose-200' : 'bg-[#eaf4f3] text-[#0d9488] border border-[#bfe0dc]'
+                            step.phase === 'containment' ? 'bg-rose-100 text-rose-700 border border-rose-200' : 'bg-[#E6EEF7] text-[#7194B7] border border-[#C1D0E2]'
                           }`}>
                             {step.phase}
                           </span>
@@ -569,24 +572,24 @@ export const AssetStoryView: React.FC<AssetStoryViewProps> = ({
                         </div>
                         <div className="flex items-center gap-2">
                           <span className={`px-2.5 py-0.5 rounded text-[10px] uppercase font-bold font-mono ${
-                            isDone ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-amber-100 text-amber-800 border border-amber-300'
+                            isDone ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' : 'bg-amber-100 text-amber-700 border border-amber-200'
                           }`}>
                             {step.status}
                           </span>
                           {!isDone && (
                             <button
                               onClick={() => handleStepVerify(step.step_id)}
-                              className="px-2.5 py-1 rounded-lg bg-[#0d9488] hover:bg-[#0f766e] text-white text-[10px] font-bold font-mono transition shadow-sm"
+                              className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-bold font-mono transition"
                             >
                               Verify Step
                             </button>
                           )}
                         </div>
                       </div>
-                      <p className="text-[#406866] text-xs font-sans leading-relaxed">{step.description}</p>
-                      <div className="mt-2.5 pt-2 border-t border-[#e5f0ef] text-[10px] text-[#527977] flex items-center justify-between">
-                        <span>Owner: <strong className="text-[#113644] font-semibold">{step.owner}</strong></span>
-                        <span>Verification: <strong className="text-[#113644] font-semibold">{step.verification_method}</strong></span>
+                      <p className="text-[#64748B] text-xs font-sans leading-relaxed">{step.description}</p>
+                      <div className="mt-2.5 pt-2 border-t border-[#E1E9F2] text-[10px] text-[#64748B] flex items-center justify-between">
+                        <span>Owner: <strong className="text-[#111B36]">{step.owner}</strong></span>
+                        <span>Verification: <strong className="text-[#111B36]">{step.verification_method}</strong></span>
                       </div>
                     </div>
                   )
@@ -604,10 +607,10 @@ export const AssetStoryView: React.FC<AssetStoryViewProps> = ({
         {/* Right Rail: Evidence Reasoning & Assistant (4 cols) */}
         <div className="lg:col-span-4 space-y-4">
           {/* Why This Verdict (Citations Enforced) */}
-          <div className="bg-white p-4 rounded-2xl border border-[#cde5e3] space-y-3 font-mono text-xs shadow-sm">
-            <div className="flex items-center justify-between border-b border-[#e5f0ef] pb-2">
-              <h3 className="font-bold text-[#113644] flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-[#0d9488]" />
+          <div className="soc-card-elevated p-4 rounded-2xl border border-[#E1E9F2] bg-white space-y-3 font-mono text-xs">
+            <div className="flex items-center justify-between border-b border-[#E1E9F2] pb-2">
+              <h3 className="font-bold text-[#111B36] flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-[#7194B7]" />
                 <span>Forensic Reasoning (Citations)</span>
               </h3>
               <span className="text-[10px] text-emerald-700 font-bold">100% CITED</span>
@@ -615,14 +618,14 @@ export const AssetStoryView: React.FC<AssetStoryViewProps> = ({
 
             <div className="space-y-2.5 font-sans">
               {story.verdict.reasons.map((r, i) => (
-                <div key={i} className="p-3 rounded-xl bg-[#f8fbfb] border border-[#cde5e3] text-[#113644] leading-relaxed text-xs">
+                <div key={i} className="p-3 rounded-xl bg-[#F7FAFD] border border-[#E1E9F2] text-[#111B36] leading-relaxed text-xs">
                   <p>{r.text}</p>
                   <div className="mt-2 flex items-center gap-1.5 flex-wrap font-mono">
-                    <span className="text-[10px] text-[#527977]">Evidence Citations:</span>
+                    <span className="text-[10px] text-[#64748B]">Evidence Citations:</span>
                     {r.evidence_ids.map((eid) => (
                       <span
                         key={eid}
-                        className="px-1.5 py-0.5 rounded bg-[#eaf4f3] text-[#0d9488] border border-[#bfe0dc] text-[10px] font-bold cursor-pointer hover:bg-[#d5f0ed] transition"
+                        className="px-1.5 py-0.5 rounded bg-[#E6EEF7] text-[#111B36] border border-[#C1D0E2] text-[10px] font-bold cursor-pointer hover:bg-[#C1D0E2] transition"
                         onClick={() => {
                           const ev = story.evidence.find((e) => e.event_id === eid)
                           if (ev) setSelectedEvidence(ev)
@@ -638,9 +641,9 @@ export const AssetStoryView: React.FC<AssetStoryViewProps> = ({
           </div>
 
           {/* What I Cannot See (Coverage Honesty) */}
-          <div className="bg-white p-4 rounded-2xl border border-[#cde5e3] space-y-2.5 font-mono text-xs shadow-sm">
-            <div className="flex items-center justify-between border-b border-[#e5f0ef] pb-2">
-              <h3 className="font-bold text-[#113644] flex items-center gap-2">
+          <div className="soc-card-elevated p-4 rounded-2xl border border-[#E1E9F2] bg-white space-y-2.5 font-mono text-xs">
+            <div className="flex items-center justify-between border-b border-[#E1E9F2] pb-2">
+              <h3 className="font-bold text-[#111B36] flex items-center gap-2">
                 <HelpCircle className="w-4 h-4 text-purple-600" />
                 <span>Coverage Honesty (Blind Spots)</span>
               </h3>
@@ -650,7 +653,7 @@ export const AssetStoryView: React.FC<AssetStoryViewProps> = ({
             </div>
 
             {story.coverage.blind_spots.length === 0 ? (
-              <p className="text-[#527977] text-xs font-sans leading-relaxed">
+              <p className="text-[#64748B] text-xs font-sans leading-relaxed">
                 Zero retention blind spots. Complete 45-day telemetry available across web, endpoint, auth, and network sources.
               </p>
             ) : (
@@ -665,12 +668,12 @@ export const AssetStoryView: React.FC<AssetStoryViewProps> = ({
           </div>
 
           {/* Ask-The-Evidence Assistant */}
-          <div className="bg-white p-4 rounded-2xl border border-[#cde5e3] space-y-3 font-mono text-xs shadow-sm">
-            <div className="flex items-center justify-between border-b border-[#e5f0ef] pb-2">
-              <h3 className="font-bold text-[#0d9488] flex items-center gap-2">
-                <MessageSquare className="w-4 h-4" /> Forensic Evidence Assistant
+          <div className="soc-card-elevated p-4 rounded-2xl border border-[#E1E9F2] bg-white space-y-3 font-mono text-xs">
+            <div className="flex items-center justify-between border-b border-[#E1E9F2] pb-2">
+              <h3 className="font-bold text-[#111B36] flex items-center gap-2">
+                <MessageSquare className="w-4 h-4 text-[#7194B7]" /> Forensic Evidence Assistant
               </h3>
-              <span className="text-[9px] px-1.5 py-0.2 rounded bg-[#eaf4f3] text-[#0d9488] border border-[#bfe0dc] font-bold">
+              <span className="text-[9px] px-1.5 py-0.2 rounded bg-[#E6EEF7] text-[#7194B7] border border-[#C1D0E2]">
                 Injection Shielded
               </span>
             </div>
@@ -685,7 +688,7 @@ export const AssetStoryView: React.FC<AssetStoryViewProps> = ({
                 <button
                   key={idx}
                   onClick={() => handleAsk(q)}
-                  className="px-2 py-1 rounded-md bg-[#f8fbfb] hover:bg-[#eaf4f3] text-[#113644] text-[10px] font-semibold border border-[#cde5e3] transition"
+                  className="px-2 py-1 rounded-md bg-[#F7FAFD] hover:bg-[#E6EEF7] text-[#111B36] text-[10px] border border-[#E1E9F2] transition"
                 >
                   {q}
                 </button>
@@ -693,25 +696,25 @@ export const AssetStoryView: React.FC<AssetStoryViewProps> = ({
             </div>
 
             {/* Chat History Drawer */}
-            <div className="h-48 overflow-y-auto space-y-2 p-2.5 rounded-xl bg-[#f8fbfb] border border-[#cde5e3] text-xs font-sans">
+            <div className="h-48 overflow-y-auto space-y-2 p-2.5 rounded-xl bg-[#F7FAFD] border border-[#E1E9F2] text-xs font-sans">
               {chatHistory.map((msg, i) => (
                 <div
                   key={i}
                   className={`p-2.5 rounded-xl ${
                     msg.sender === 'user'
-                      ? 'bg-[#eaf4f3] text-[#113644] border border-[#bfe0dc] ml-4'
-                      : 'bg-white text-[#113644] mr-4 border border-[#cde5e3] shadow-sm'
+                      ? 'bg-[#E6EEF7] text-[#111B36] border border-[#84A3C4] ml-4'
+                      : 'bg-white text-[#111B36] mr-4 border border-[#E1E9F2]'
                   }`}
                 >
-                  <div className="font-bold text-[9px] uppercase tracking-wider text-[#527977] mb-0.5 font-mono">
+                  <div className="font-bold text-[9px] uppercase tracking-wider text-[#64748B] mb-0.5 font-mono">
                     {msg.sender === 'user' ? 'Analyst' : 'PatchGate Trust Service'}
                   </div>
                   <p className="leading-relaxed">{msg.text}</p>
                   {msg.citations && msg.citations.length > 0 && (
                     <div className="mt-1.5 flex items-center gap-1 flex-wrap font-mono">
-                      <span className="text-[9px] text-[#527977]">Citations:</span>
+                      <span className="text-[9px] text-[#64748B]">Citations:</span>
                       {msg.citations.map((c) => (
-                        <span key={c} className="text-[9px] px-1 rounded bg-[#eaf4f3] text-[#0d9488] border border-[#bfe0dc] font-bold">
+                        <span key={c} className="text-[9px] px-1 rounded bg-[#E6EEF7] text-[#7194B7] border border-[#C1D0E2]">
                           [{c}]
                         </span>
                       ))}
@@ -719,7 +722,7 @@ export const AssetStoryView: React.FC<AssetStoryViewProps> = ({
                   )}
                 </div>
               ))}
-              {isAsking && <div className="text-[#527977] italic text-[11px] font-mono">Querying evidence ledger...</div>}
+              {isAsking && <div className="text-[#64748B] italic text-[11px] font-mono">Querying evidence ledger...</div>}
             </div>
 
             {/* Query Input */}
@@ -730,11 +733,11 @@ export const AssetStoryView: React.FC<AssetStoryViewProps> = ({
                 value={chatQuestion}
                 onChange={(e) => setChatQuestion(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleAsk()}
-                className="flex-1 bg-white border border-[#cde5e3] rounded-xl px-3 py-1.5 text-xs text-[#113644] placeholder-[#8da8a6] focus:outline-none focus:border-[#0d9488] font-mono"
+                className="flex-1 bg-white border border-[#E1E9F2] rounded-xl px-3 py-1.5 text-xs text-[#111B36] placeholder-[#64748B] focus:outline-none focus:border-[#7194B7] font-mono"
               />
               <button
                 onClick={() => handleAsk()}
-                className="p-2 rounded-xl bg-[#0d9488] hover:bg-[#0f766e] text-white transition active:scale-95 shadow-sm"
+                className="p-2 rounded-xl bg-[#7194B7] hover:bg-[#5E82A7] text-white transition active:scale-95 shadow-sm"
               >
                 <Send className="w-3.5 h-3.5" />
               </button>
@@ -744,64 +747,64 @@ export const AssetStoryView: React.FC<AssetStoryViewProps> = ({
       </div>
 
       {/* Bottom Gated Execution Pipeline */}
-      <div className="bg-white p-5 rounded-2xl border border-[#cde5e3] space-y-4 font-mono text-xs shadow-sm">
-        <div className="flex items-center justify-between border-b border-[#e5f0ef] pb-2">
-          <h3 className="font-bold text-[#113644] uppercase tracking-wider flex items-center gap-2">
-            <Shield className="w-4 h-4 text-[#0d9488]" />
+      <div className="soc-card-elevated p-5 rounded-2xl border border-[#E1E9F2] bg-white space-y-4 font-mono text-xs">
+        <div className="flex items-center justify-between border-b border-[#E1E9F2] pb-2">
+          <h3 className="font-bold text-[#111B36] uppercase tracking-wider flex items-center gap-2">
+            <Shield className="w-4 h-4 text-[#7194B7]" />
             <span>Recommended Decision Sequence & Patch Gate Pipeline</span>
           </h3>
-          <span className="text-[10px] text-[#527977]">Step 3 strictly enforced by Policy</span>
+          <span className="text-[10px] text-[#64748B]">Step 3 strictly enforced by Policy</span>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
           {/* Step 1: Containment */}
-          <div className="p-4 rounded-xl bg-[#f8fbfb] border border-[#cde5e3] space-y-1.5">
-            <div className="flex items-center justify-between font-bold text-[#113644]">
+          <div className="p-4 rounded-xl bg-[#F7FAFD] border border-[#E1E9F2] space-y-1.5">
+            <div className="flex items-center justify-between font-bold text-[#111B36]">
               <span>1. Host Isolation</span>
               <span className={`text-[10px] px-1.5 py-0.2 rounded font-bold uppercase ${
-                isComp ? 'bg-rose-100 text-rose-700 border border-rose-300' : 'bg-[#eaf4f3] text-[#527977]'
+                isComp ? 'bg-[#FEE2E2] text-[#DC2626] border border-[#FECACA]' : 'bg-[#E6EEF7] text-[#64748B]'
               }`}>
                 {isComp ? 'Mandatory' : 'Bypassed'}
               </span>
             </div>
-            <p className="text-[11px] text-[#527977] font-sans leading-relaxed">
+            <p className="text-[11px] text-[#64748B] font-sans leading-relaxed">
               Quarantine host to isolated VLAN prior to patching to prevent active lateral movement.
             </p>
           </div>
 
           {/* Step 2: Evidence Snapshot */}
-          <div className="p-4 rounded-xl bg-[#f8fbfb] border border-[#cde5e3] space-y-1.5">
-            <div className="flex items-center justify-between font-bold text-[#113644]">
+          <div className="p-4 rounded-xl bg-[#F7FAFD] border border-[#E1E9F2] space-y-1.5">
+            <div className="flex items-center justify-between font-bold text-[#111B36]">
               <span>2. Memory Snapshot</span>
-              <span className="text-[10px] text-[#527977] uppercase font-bold">Volatile</span>
+              <span className="text-[10px] text-[#64748B] uppercase font-bold">Volatile</span>
             </div>
-            <p className="text-[11px] text-[#527977] font-sans leading-relaxed">
+            <p className="text-[11px] text-[#64748B] font-sans leading-relaxed">
               Preserve live RAM dump and socket states before host reboot or firmware overwrite.
             </p>
           </div>
 
           {/* Step 3: Patch Gate */}
           <div className={`p-4 rounded-xl border space-y-2 transition ${
-            story.gate.gate_locked ? 'bg-rose-50 border-rose-300 text-rose-950' : 'bg-emerald-50 border-emerald-300 text-emerald-950'
+            story.gate.gate_locked ? 'bg-[#FEE2E2]/40 border-[#FECACA]' : 'bg-[#D1FAE5]/40 border-[#A7F3D0]'
           }`}>
             <div className="flex items-center justify-between font-bold">
-              <span className="flex items-center gap-1.5">
-                {story.gate.gate_locked ? <Lock className="w-4 h-4 text-rose-600" /> : <Unlock className="w-4 h-4 text-emerald-600" />}
+              <span className="flex items-center gap-1.5 text-[#111B36]">
+                {story.gate.gate_locked ? <Lock className="w-4 h-4 text-[#DC2626]" /> : <Unlock className="w-4 h-4 text-[#047857]" />}
                 3. Patch Gate
               </span>
               <span className={`text-[10px] px-2 py-0.5 rounded font-black uppercase ${
-                story.gate.gate_locked ? 'bg-rose-100 text-rose-700 border border-rose-300' : 'bg-emerald-100 text-emerald-800'
+                story.gate.gate_locked ? 'bg-[#FEE2E2] text-[#DC2626] border border-[#FECACA]' : 'bg-[#D1FAE5] text-[#047857] border border-[#A7F3D0]'
               }`}>
                 {story.gate.gate_locked ? 'LOCKED' : 'UNLOCKED'}
               </span>
             </div>
-            <p className="text-[11px] text-[#204443] font-sans">
-              Outcome: <strong className="text-[#113644] font-bold">{story.gate.outcome}</strong>
+            <p className="text-[11px] text-[#111B36] font-sans">
+              Outcome: <strong className="text-[#111B36] font-bold">{story.gate.outcome}</strong>
             </p>
             {story.gate.gate_locked && (
               <button
                 onClick={() => setShowOverrideModal(true)}
-                className="w-full py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-[11px] font-bold shadow-sm transition"
+                className="w-full py-1.5 rounded-lg bg-[#7194B7] hover:bg-[#5E82A7] text-white text-[11px] font-bold transition shadow-2xs cursor-pointer"
               >
                 Apply Gate Override
               </button>
@@ -809,18 +812,18 @@ export const AssetStoryView: React.FC<AssetStoryViewProps> = ({
           </div>
 
           {/* Step 4: Post-Patch Re-Check */}
-          <div className="p-4 rounded-xl bg-[#f8fbfb] border border-[#cde5e3] space-y-2">
-            <div className="flex items-center justify-between font-bold text-[#113644]">
+          <div className="p-4 rounded-xl bg-[#F7FAFD] border border-[#E1E9F2] space-y-2">
+            <div className="flex items-center justify-between font-bold text-[#111B36]">
               <span>4. Closure Verification</span>
-              <span className="text-[#0d9488] text-[10px] font-bold uppercase">Re-Check Engine</span>
+              <span className="text-[#7194B7] text-[10px] font-bold uppercase">Re-Check Engine</span>
             </div>
-            <p className="text-[11px] text-[#527977] font-sans leading-relaxed">
+            <p className="text-[11px] text-[#64748B] font-sans leading-relaxed">
               Forensic recheck verifying web shell removal, session flush, and 0 outbound C2 traffic.
             </p>
             <button
               onClick={handleRunRecheck}
               disabled={recheckRunning}
-              className="w-full py-1.5 rounded-lg bg-[#0d9488] hover:bg-[#0f766e] text-white font-bold text-[11px] transition active:scale-95 shadow-sm"
+              className="w-full py-1.5 rounded-lg bg-[#7194B7] hover:bg-[#5E82A7] text-white font-bold text-[11px] transition active:scale-95 shadow-sm"
             >
               {recheckRunning ? 'Re-Checking Host...' : 'Run Post-Patch Re-Check'}
             </button>
@@ -828,51 +831,51 @@ export const AssetStoryView: React.FC<AssetStoryViewProps> = ({
         </div>
 
         {recheckMessage && (
-          <div className="p-3.5 rounded-xl bg-[#f8fbfb] border border-[#bfe0dc] text-[#0d9488] font-mono text-xs flex items-center justify-between">
-            <span className="font-semibold">{recheckMessage}</span>
-            <span className="text-[10px] text-[#527977] font-bold uppercase">Closure Audit Complete</span>
+          <div className="p-3.5 rounded-xl bg-[#E6EEF7] border border-[#7194B7] text-[#111B36] font-mono text-xs flex items-center justify-between">
+            <span>{recheckMessage}</span>
+            <span className="text-[10px] text-[#64748B] font-bold uppercase">Closure Audit Complete</span>
           </div>
         )}
       </div>
 
       {/* Override Modal */}
       {showOverrideModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0d2833]/60 backdrop-blur-md p-4">
-          <div className="bg-white p-6 max-w-md w-full space-y-4 font-mono text-xs rounded-2xl border border-rose-300 shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+          <div className="soc-card-elevated p-6 max-w-md w-full space-y-4 font-mono text-xs rounded-2xl border border-rose-300 bg-white">
             <h3 className="text-sm font-bold text-rose-700 flex items-center gap-2">
-              <Lock className="w-4 h-4 text-rose-600" /> Administrative Patch Gate Override
+              <Lock className="w-4 h-4" /> Administrative Patch Gate Override
             </h3>
-            <p className="text-[#406866] font-sans text-xs leading-relaxed">
+            <p className="text-[#64748B] font-sans text-xs leading-relaxed">
               Unlocks the patch gate over a suspected or confirmed compromise. Requires business continuity justification and records an immutable audit entry in the chain of custody.
             </p>
             <div>
-              <label className="text-[#527977] font-semibold">Approver ID / Role:</label>
+              <label className="text-[#64748B]">Approver ID / Role:</label>
               <input
                 type="text"
                 value={overrideApprover}
                 onChange={(e) => setOverrideApprover(e.target.value)}
-                className="w-full mt-1 bg-[#f8fbfb] border border-[#cde5e3] rounded-lg p-2 text-[#113644] font-mono text-xs focus:outline-none focus:border-[#0d9488]"
+                className="w-full mt-1 bg-[#F7FAFD] border border-[#E1E9F2] rounded-lg p-2 text-[#111B36] font-mono text-xs"
               />
             </div>
             <div>
-              <label className="text-[#527977] font-semibold">Recorded Operational Justification:</label>
+              <label className="text-[#64748B]">Recorded Operational Justification:</label>
               <textarea
                 value={overrideReason}
                 onChange={(e) => setOverrideReason(e.target.value)}
                 rows={3}
-                className="w-full mt-1 bg-[#f8fbfb] border border-[#cde5e3] rounded-lg p-2 text-[#113644] font-sans text-xs focus:outline-none focus:border-[#0d9488]"
+                className="w-full mt-1 bg-[#F7FAFD] border border-[#E1E9F2] rounded-lg p-2 text-[#111B36] font-sans text-xs"
               />
             </div>
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-[#e5f0ef]">
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-[#E1E9F2]">
               <button
                 onClick={() => setShowOverrideModal(false)}
-                className="px-3 py-1.5 rounded-lg bg-[#f2f7f7] text-[#527977] hover:bg-[#eaf4f3] border border-[#cde5e3]"
+                className="px-3 py-1.5 rounded-lg bg-[#E6EEF7] text-[#111B36] hover:bg-[#C1D0E2]"
               >
                 Cancel
               </button>
               <button
                 onClick={handleOverride}
-                className="px-4 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold shadow-sm"
+                className="px-4 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-bold"
               >
                 Confirm & Log Override
               </button>

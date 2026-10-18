@@ -1,5 +1,5 @@
 """
-REST API Routes and SSE Endpoint for Patch Assurance.
+REST API Routes and SSE Endpoint for BookEnd.
 """
 import asyncio
 import json
@@ -30,6 +30,7 @@ from app.engine.verdict import build_verdict
 from app.engine.webhooks import WebhookDispatcher
 from app.models.schemas import Advisory, Asset, ProofPack
 from app.simulator.range_lite import RangeLiteSimulator, TENANTS_DATA
+from app.core.server_telemetry import ServerTelemetryManager
 
 router = APIRouter()
 
@@ -38,6 +39,7 @@ _cached_hunt_spec = None
 _cached_playbooks: Dict[str, Any] = {}
 _cached_verdicts: Dict[str, Any] = {}
 _cached_gates: Dict[str, Any] = {}
+_approved_assets: set = set()
 _simulate_s5_persistence_flag: bool = True
 
 def get_sim():
@@ -57,7 +59,17 @@ def evaluate_asset_pipeline(asset: Asset) -> Dict[str, Any]:
     evidence = execute_hunts_for_asset(sim.con, asset, spec)
     coverage = calculate_log_coverage(sim.con, asset, settings.DEFAULT_LOOKBACK_DAYS)
     verdict = build_verdict(asset, sim.advisory, evidence, coverage)
-    gate = evaluate_patch_gate(asset, verdict)
+    
+    # Check if gate has an active override or bulk approval
+    if asset.id in _cached_gates and getattr(_cached_gates[asset.id], "status", "") == "overridden":
+        gate = _cached_gates[asset.id]
+    elif asset.id in _approved_assets or asset.host_name in _approved_assets:
+        gate = evaluate_patch_gate(asset, verdict)
+        gate.status = "approved"
+        gate.gate_locked = False
+        gate.outcome = "Approved & Released"
+    else:
+        gate = evaluate_patch_gate(asset, verdict)
 
     if asset.id not in _cached_playbooks:
         _cached_playbooks[asset.id] = generate_playbook_for_asset(asset, sim.advisory)
@@ -185,6 +197,7 @@ def get_decision_queue(tenant_id: Optional[str] = None):
 
     for a in matched_assets:
         story = evaluate_asset_pipeline(a)
+        is_approved = (a.id in _approved_assets or a.host_name in _approved_assets)
         queue_items.append({
             "asset_id": a.id,
             "host_name": a.host_name,
@@ -194,11 +207,12 @@ def get_decision_queue(tenant_id: Optional[str] = None):
             "verdict_state": story["verdict"].state,
             "confidence": story["verdict"].confidence,
             "coverage_score": story["coverage"].overall_coverage,
-            "gate_outcome": story["gate"].outcome,
-            "gate_locked": story["gate"].gate_locked,
+            "gate_outcome": "Approved & Released" if is_approved else story["gate"].outcome,
+            "gate_locked": False if is_approved else story["gate"].gate_locked,
             "seconds_remaining": story["clock"].seconds_remaining,
             "is_breached": story["clock"].is_breached,
-            "status": a.status
+            "status": "approved" if is_approved else a.status,
+            "is_approved": is_approved
         })
 
     # Sort queue: Emergency tiers first, shortest deadline seconds first
@@ -238,8 +252,8 @@ def bulk_approve_no_evidence(payload: Dict[str, Any]):
     for a in sim.assets:
         story = evaluate_asset_pipeline(a)
         if story["verdict"].state == "No evidence found" and story["coverage"].adequate:
-            story["gate"].status = "approved"
-            story["gate"].gate_locked = False
+            _approved_assets.add(a.id)
+            _approved_assets.add(a.host_name)
             approved.append(a.id)
 
     AuditLedger.get_ledger().append(
@@ -455,13 +469,14 @@ def toggle_s5_persistence():
 
 @router.post("/demo/reset")
 def reset_demo():
-    global _cached_hunt_spec, _cached_playbooks, _cached_verdicts, _cached_gates, _simulate_s5_persistence_flag
+    global _cached_hunt_spec, _cached_playbooks, _cached_verdicts, _cached_gates, _simulate_s5_persistence_flag, _approved_assets
     sim = get_sim()
     sim.populate_all(seed=42)
     _cached_hunt_spec = None
     _cached_playbooks = {}
     _cached_verdicts = {}
     _cached_gates = {}
+    _approved_assets = set()
     _simulate_s5_persistence_flag = True
     AuditLedger.get_ledger().reset()
     return {"status": "success", "message": "Demo reset to initial baseline state completed in <1s"}
@@ -554,19 +569,44 @@ def run_evaluation_harness():
         }
     }
 
+# ==================== ENTERPRISE SERVER TELEMETRY & CONTROLS ====================
+@router.get("/system/server-status")
+def get_system_server_status():
+    """Returns detailed real-time enterprise hardware, cluster topology, and log telemetry."""
+    return ServerTelemetryManager.get_instance().get_server_status()
+
+@router.post("/system/flush-cache")
+def flush_duckdb_cache():
+    """Flushes DuckDB columnar query cache and buffer pool."""
+    return ServerTelemetryManager.get_instance().flush_cache()
+
+@router.post("/system/rotate-keys")
+def rotate_session_keys():
+    """Rotates ephemeral Ed25519 session notary tokens."""
+    return ServerTelemetryManager.get_instance().rotate_keys()
+
 # ==================== SERVER-SENT EVENTS (SSE) ====================
 @router.get("/events")
 async def sse_event_stream(request: Request):
-    """Streams live real-time countdown clock ticks and audit events."""
+    """Streams live real-time countdown clock ticks, server telemetry pulses, and audit events."""
     async def event_generator():
+        telemetry = ServerTelemetryManager.get_instance()
         while True:
             if await request.is_disconnected():
                 break
             now_iso = datetime.now(timezone.utc).isoformat()
+            status = telemetry.get_server_status()
             data = json.dumps({
                 "type": "CLOCK_TICK",
                 "timestamp": now_iso,
-                "active_audits": len(AuditLedger.get_ledger().chain)
+                "active_audits": len(AuditLedger.get_ledger().chain),
+                "server_pulse": {
+                    "node_id": status["server"]["node_id"],
+                    "cpu_load": status["hardware"]["cpu"]["utilization_percent"],
+                    "memory_mb": status["hardware"]["memory"]["used_mb"],
+                    "uptime": status["server"]["uptime_formatted"],
+                    "duckdb_cache_mb": status["hardware"]["columnar_cache"]["duckdb_buffer_pool_mb"]
+                }
             })
             yield f"data: {data}\n\n"
             await asyncio.sleep(3)

@@ -211,6 +211,7 @@ export interface QueueItem {
   seconds_remaining: number
   is_breached: boolean
   status: string
+  is_approved?: boolean
 }
 
 export interface ProofPackManifest {

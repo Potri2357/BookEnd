@@ -1,8 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Sidebar } from './components/Sidebar'
-import { TopHeader } from './components/TopHeader'
-import { DashboardOverview } from './components/DashboardOverview'
-import { DemoControlPanel } from './components/DemoControlPanel'
+import { Navbar } from './components/Navbar'
 import { DecisionQueueView } from './components/DecisionQueueView'
 import { AssetStoryView } from './components/AssetStoryView'
 import { AdvisoryDetailView } from './components/AdvisoryDetailView'
@@ -10,6 +7,7 @@ import { FleetView } from './components/FleetView'
 import { ConnectorsView } from './components/ConnectorsView'
 import { EvaluationView } from './components/EvaluationView'
 import { AuditLedgerView } from './components/AuditLedgerView'
+import { ServerConsoleView } from './components/ServerConsoleView'
 import {
   fetchTenants, fetchQueue, fetchAssetStory, fetchAdvisory,
   bulkApprovePatchNow, resetDemo, togglePersistence
@@ -19,13 +17,12 @@ import { Tenant, QueueItem, AssetStory, Advisory } from './types'
 export function App() {
   const [tenants, setTenants] = useState<Tenant[]>([])
   const [selectedTenant, setSelectedTenant] = useState<string>('all')
-  const [currentView, setCurrentView] = useState<string>('dashboard')
+  const [currentView, setCurrentView] = useState<string>('queue')
   const [queue, setQueue] = useState<QueueItem[]>([])
   const [selectedAssetId, setSelectedAssetId] = useState<string | null>(null)
   const [assetStory, setAssetStory] = useState<AssetStory | null>(null)
   const [advisory, setAdvisory] = useState<Advisory | null>(null)
   const [loadingStory, setLoadingStory] = useState(false)
-  const [isResetting, setIsResetting] = useState(false)
   const [isBulkApproving, setIsBulkApproving] = useState(false)
   const [persistenceActive, setPersistenceActive] = useState(true)
 
@@ -43,7 +40,8 @@ export function App() {
 
   // Setup Server-Sent Events (SSE) for real-time live clock updates
   useEffect(() => {
-    const eventSource = new EventSource('/v1/events')
+    const apiBase = (import.meta.env.VITE_API_BASE_URL || '/v1').replace(/\/+$/, '')
+    const eventSource = new EventSource(`${apiBase}/events`)
     eventSource.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data)
@@ -67,8 +65,14 @@ export function App() {
   }, [])
 
   const loadQueue = async () => {
-    const q = await fetchQueue(selectedTenant)
-    setQueue(q)
+    try {
+      const q = await fetchQueue(selectedTenant)
+      if (Array.isArray(q)) {
+        setQueue(q)
+      }
+    } catch (e) {
+      console.error('Failed to load queue:', e)
+    }
   }
 
   const handleSelectAsset = async (assetId: string) => {
@@ -78,6 +82,8 @@ export function App() {
     try {
       const story = await fetchAssetStory(assetId)
       setAssetStory(story)
+    } catch (e) {
+      console.error('Failed to load asset story:', e)
     } finally {
       setLoadingStory(false)
     }
@@ -85,8 +91,12 @@ export function App() {
 
   const handleRefreshStory = async () => {
     if (selectedAssetId) {
-      const story = await fetchAssetStory(selectedAssetId)
-      setAssetStory(story)
+      try {
+        const story = await fetchAssetStory(selectedAssetId)
+        setAssetStory(story)
+      } catch (e) {
+        console.error('Failed to refresh asset story:', e)
+      }
     }
     loadQueue()
   }
@@ -101,22 +111,13 @@ export function App() {
     }
   }
 
-  const handleReset = async () => {
-    setIsResetting(true)
-    try {
-      await resetDemo()
-      await loadQueue()
-      if (selectedAssetId) {
-        await handleSelectAsset(selectedAssetId)
-      }
-    } finally {
-      setIsResetting(false)
-    }
-  }
-
   const handleTogglePersistence = async () => {
-    const res = await togglePersistence()
-    setPersistenceActive(res.s5_persistence_active)
+    try {
+      const res = await togglePersistence()
+      setPersistenceActive(res.s5_persistence_active)
+    } catch (e) {
+      console.error('Failed to toggle persistence:', e)
+    }
   }
 
   // Setup global keyboard shortcuts
@@ -125,15 +126,15 @@ export function App() {
       if (['INPUT', 'TEXTAREA', 'SELECT'].includes((e.target as HTMLElement)?.tagName)) {
         return
       }
-      if (e.key === '0') setCurrentView('dashboard')
       if (e.key === '1') setCurrentView('queue')
       if (e.key === '2') setCurrentView('advisory')
       if (e.key === '3') setCurrentView('fleet')
       if (e.key === '4') setCurrentView('connectors')
       if (e.key === '5') setCurrentView('evaluation')
       if (e.key === '6') setCurrentView('audit')
+      if (e.key === '7') setCurrentView('server')
       if (e.key === 'Escape') {
-        if (currentView === 'story') {
+        if (currentView === 'story' || currentView === 'server') {
           setCurrentView('queue')
           loadQueue()
         }
@@ -143,137 +144,100 @@ export function App() {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [currentView])
 
-  const handleNavView = (view: string) => {
-    if (view === 'remediation') {
-      handleSelectAsset('ast-001-vpn-gw')
-      return
-    }
-    if (view === 'story') {
-      if (!selectedAssetId) {
-        handleSelectAsset('ast-001-vpn-gw')
-        return
-      }
-    }
-    setCurrentView(view)
-    if (view !== 'story') setSelectedAssetId(null)
-  }
-
   return (
-    <div className="min-h-screen flex bg-[#f4f7fb] text-[#0f172a] selection:bg-blue-500/20 selection:text-blue-900 font-sans">
-      {/* Left Sidebar Navigation matching screenshot */}
-      <Sidebar
+    <div className="min-h-screen flex flex-col bg-[#F7FAFD] text-[#111B36] selection:bg-[#C1D0E2] selection:text-[#111B36]">
+      <Navbar
+        tenants={tenants}
+        selectedTenant={selectedTenant}
+        onSelectTenant={setSelectedTenant}
         currentView={currentView}
-        onSelectView={handleNavView}
+        onSelectView={(v) => {
+          setCurrentView(v)
+          if (v !== 'story') setSelectedAssetId(null)
+        }}
+        onSelectScenarioAsset={handleSelectAsset}
+        onTogglePersistence={handleTogglePersistence}
+        persistenceActive={persistenceActive}
       />
 
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0 pb-12">
-        {/* Top Search & User Header matching screenshot */}
-        <TopHeader
-          tenants={tenants}
-          selectedTenant={selectedTenant}
-          onSelectTenant={setSelectedTenant}
-          onResetDemo={handleReset}
-          isResetting={isResetting}
-        />
+      <main className="flex-1 flex flex-col pb-8">
+        {currentView === 'queue' && (
+          <DecisionQueueView
+            queue={queue}
+            onSelectAsset={handleSelectAsset}
+            onBulkApprove={handleBulkApprove}
+            isBulkApproving={isBulkApproving}
+            selectedTenant={selectedTenant}
+          />
+        )}
 
-        {/* Tactical Scenario Bar & Architectural Pillars */}
-        <DemoControlPanel
-          onSelectScenarioAsset={handleSelectAsset}
-          onTogglePersistence={handleTogglePersistence}
-          persistenceActive={persistenceActive}
-          onReset={handleReset}
-          isResetting={isResetting}
-        />
-
-        {/* View Router */}
-        <main className="flex-1 flex flex-col">
-          {currentView === 'dashboard' && (
-            <DashboardOverview
-              queue={queue}
-              onSelectAsset={handleSelectAsset}
-              onNavigateToQueue={() => setCurrentView('queue')}
-              onNavigateToAdvisory={() => setCurrentView('advisory')}
-            />
-          )}
-
-          {currentView === 'queue' && (
-            <DecisionQueueView
-              queue={queue}
-              onSelectAsset={handleSelectAsset}
-              onBulkApprove={handleBulkApprove}
-              isBulkApproving={isBulkApproving}
-              selectedTenant={selectedTenant}
-            />
-          )}
-
-          {currentView === 'story' && (
-            loadingStory || !assetStory ? (
-              <div className="flex-1 flex items-center justify-center p-12 text-[#64748b] font-mono text-xs">
-                <span className="flex h-3 w-3 rounded-full bg-[#3b6998] animate-ping mr-3" />
-                Loading forensic asset story and telemetry...
-              </div>
-            ) : (
-              <AssetStoryView
-                story={assetStory}
-                onBack={() => {
-                  setCurrentView('queue')
-                  loadQueue()
-                }}
-                onRefresh={handleRefreshStory}
-              />
-            )
-          )}
-
-          {currentView === 'advisory' && advisory && (
-            <AdvisoryDetailView advisory={advisory} />
-          )}
-
-          {currentView === 'fleet' && (
-            <FleetView
-              tenants={tenants}
-              onSelectTenant={(tId) => {
-                setSelectedTenant(tId)
+        {currentView === 'story' && (
+          loadingStory || !assetStory ? (
+            <div className="flex-1 flex items-center justify-center p-12 text-[#64748B] font-mono text-xs">
+              <span className="flex h-3 w-3 rounded-full bg-[#7194B7] animate-ping mr-3" />
+              Loading forensic asset story and telemetry...
+            </div>
+          ) : (
+            <AssetStoryView
+              story={assetStory}
+              onBack={() => {
                 setCurrentView('queue')
+                loadQueue()
               }}
-              onSelectView={setCurrentView}
+              onRefresh={handleRefreshStory}
             />
-          )}
+          )
+        )}
 
-          {currentView === 'connectors' && <ConnectorsView />}
+        {currentView === 'advisory' && advisory && (
+          <AdvisoryDetailView advisory={advisory} />
+        )}
 
-          {currentView === 'evaluation' && <EvaluationView />}
+        {currentView === 'fleet' && (
+          <FleetView
+            tenants={tenants}
+            onSelectTenant={(tId) => {
+              setSelectedTenant(tId)
+              setCurrentView('queue')
+            }}
+            onSelectView={setCurrentView}
+          />
+        )}
 
-          {currentView === 'audit' && <AuditLedgerView />}
-        </main>
+        {currentView === 'connectors' && <ConnectorsView />}
 
-        {/* Tactical Enterprise Status Strip */}
-        <footer className="fixed bottom-0 left-56 right-0 z-40 bg-white/95 border-t border-[#e2e8f0] px-5 py-1.5 text-[10px] font-mono text-[#64748b] flex items-center justify-between backdrop-blur shadow-xs">
-          <div className="flex items-center gap-3">
-            <span className="flex items-center gap-1.5 text-[#2563eb] font-semibold">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#2563eb] animate-pulse" />
-              DUCKDB 1.0 (COLUMNAR LOG STORE)
-            </span>
-            <span className="text-[#cbd5e1]">|</span>
-            <span>AIR-GAPPED COMPLIANCE READY</span>
-            <span className="text-[#cbd5e1]">|</span>
-            <span className="text-[#334155] font-semibold">RFC 8785 JSON · ED25519 SIGNED</span>
-            <span className="text-[#cbd5e1]">|</span>
-            <span>SSE STREAM ACTIVE (3s TICK)</span>
-          </div>
+        {currentView === 'evaluation' && <EvaluationView />}
 
-          <div className="hidden lg:flex items-center gap-2 text-[#64748b]">
-            <span>Shortcuts:</span>
-            <span><kbd>0</kbd> Dashboard</span>
-            <span><kbd>1</kbd> Investigations</span>
-            <span><kbd>2</kbd> CVE</span>
-            <span><kbd>3</kbd> Fleet</span>
-            <span><kbd>4</kbd> Ingress</span>
-            <span><kbd>5</kbd> Benchmark</span>
-            <span><kbd>6</kbd> Proof Pack</span>
-          </div>
-        </footer>
-      </div>
+        {currentView === 'audit' && <AuditLedgerView />}
+
+        {currentView === 'server' && (
+          <ServerConsoleView />
+        )}
+      </main>
+
+      {/* Enterprise Security Footer */}
+      <footer className="mt-auto border-t border-[#E1E9F2] bg-white/70 backdrop-blur-md py-2.5 px-6 text-[11px] font-mono text-[#64748B] flex flex-wrap items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <span className="flex items-center gap-1.5 text-[#047857] font-semibold">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#047857] animate-pulse" />
+            BOOKEND AIR-GAP ASSURANCE ENGINE
+          </span>
+          <span className="text-[#CBD5E1]">|</span>
+          <span className="text-[#1D63ED] font-semibold">DUCKDB COLUMNAR FORENSICS</span>
+          <span className="text-[#CBD5E1]">|</span>
+          <span>RFC 8785 JSON · ED25519 HSM NOTARY</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span>Shortcuts:</span>
+          <kbd className="px-1.5 py-0.5 rounded bg-[#F1F5F9] border border-[#CBD5E1] text-[#334155] font-bold">1</kbd> Queue
+          <kbd className="px-1.5 py-0.5 rounded bg-[#F1F5F9] border border-[#CBD5E1] text-[#334155] font-bold">2</kbd> Advisory
+          <kbd className="px-1.5 py-0.5 rounded bg-[#F1F5F9] border border-[#CBD5E1] text-[#334155] font-bold">3</kbd> Fleet
+          <kbd className="px-1.5 py-0.5 rounded bg-[#F1F5F9] border border-[#CBD5E1] text-[#334155] font-bold">4</kbd> Ingress
+          <kbd className="px-1.5 py-0.5 rounded bg-[#F1F5F9] border border-[#CBD5E1] text-[#334155] font-bold">5</kbd> Eval
+          <kbd className="px-1.5 py-0.5 rounded bg-[#F1F5F9] border border-[#CBD5E1] text-[#334155] font-bold">6</kbd> Ledger
+          <kbd className="px-1.5 py-0.5 rounded bg-[#F1F5F9] border border-[#CBD5E1] text-[#334155] font-bold">7</kbd> Server
+        </div>
+      </footer>
     </div>
   )
 }

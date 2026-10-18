@@ -9,7 +9,7 @@ from app.engine.extractor import screen_untrusted_input
 from app.models.schemas import EvidenceEvent, Verdict
 
 ASSISTANT_SYSTEM_DIRECTIVE = (
-    "You are the Patch Assurance Evidence Assistant. You only answer based on verified "
+    "You are the BookEnd Evidence Assistant. You only answer based on verified "
     "telemetry records provided in the case evidence. If evidence is not present, state 'Unknown'."
 )
 

@@ -18,59 +18,59 @@ export const BlastRadiusView: React.FC<BlastRadiusViewProps> = ({ graph, hostNam
   const getNodeIcon = (type: string) => {
     switch (type) {
       case 'dc':
-        return <Server className="w-5 h-5 text-purple-600" />
+        return <Server className="w-5 h-5 text-purple-400" />
       case 'database':
-        return <Database className="w-5 h-5 text-amber-600" />
+        return <Database className="w-5 h-5 text-amber-400" />
       case 'credential':
-        return <Key className="w-5 h-5 text-rose-600" />
+        return <Key className="w-5 h-5 text-rose-400" />
       case 'service':
-        return <Lock className="w-5 h-5 text-[#0d9488]" />
+        return <Lock className="w-5 h-5 text-cyan-400" />
       default:
-        return <Network className="w-5 h-5 text-[#143e4c]" />
+        return <Network className="w-5 h-5 text-blue-400" />
     }
   }
 
   return (
     <div className="space-y-4">
       {/* Top Blast Radius Score HUD */}
-      <div className={`p-5 rounded-2xl soc-card border flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-sm ${
-        isHighRisk ? 'border-rose-300 bg-rose-50/20' : 'border-[#d2e8e5]'
+      <div className={`p-5 rounded-2xl soc-card-elevated border flex flex-col md:flex-row items-start md:items-center justify-between gap-4 ${
+        isHighRisk ? 'border-rose-400/60 bg-rose-50/50' : 'border-[#E1E9F2] bg-white'
       }`}>
         <div className="space-y-1">
           <div className="flex items-center gap-2">
             {isHighRisk ? (
               <AlertOctagon className="w-5 h-5 text-rose-600 animate-pulse" />
             ) : (
-              <ShieldCheck className="w-5 h-5 text-[#0d9488]" />
+              <ShieldCheck className="w-5 h-5 text-emerald-600" />
             )}
-            <h3 className="text-base font-black text-[#113644] font-mono tracking-tight">
-              Lateral Attack Surface & Blast Radius Engine
+            <h3 className="text-base font-black text-[#111B36] font-mono tracking-tight">
+              Lateral Attack Surface & Blast Radius (V2 Engine)
             </h3>
             <span className={`text-[10px] font-mono px-2 py-0.5 rounded font-black uppercase tracking-wider ${
-              isHighRisk ? 'bg-rose-100 text-rose-800' : 'bg-[#e0f2f1] text-[#0d766e]'
+              isHighRisk ? 'bg-rose-100 text-rose-700 border border-rose-200' : 'bg-emerald-100 text-emerald-700 border border-emerald-200'
             }`}>
               {isHighRisk ? 'Critical Pivot Risk' : 'Isolated Pivot'}
             </span>
           </div>
-          <p className="text-xs text-[#4f717f] font-sans leading-relaxed max-w-2xl">
+          <p className="text-xs text-[#64748B] font-sans leading-relaxed max-w-2xl">
             {graph.summary}
           </p>
         </div>
 
-        <div className="flex items-center gap-4 shrink-0 bg-[#f0f7f6] p-3 rounded-xl border border-[#d2e8e5]">
+        <div className="flex items-center gap-4 shrink-0 bg-[#F7FAFD] p-3 rounded-xl border border-[#E1E9F2]">
           <div className="text-right">
-            <div className="text-[10px] font-mono font-bold text-[#557784] uppercase tracking-wider">
+            <div className="text-[10px] font-mono font-bold text-[#64748B] uppercase tracking-wider">
               Blast Radius Score
             </div>
             <div className={`text-2xl font-black font-mono ${
-              isHighRisk ? 'text-rose-600' : 'text-[#0d9488]'
+              isHighRisk ? 'text-rose-600' : 'text-emerald-600'
             }`}>
-              {graph.blast_radius_score} <span className="text-xs text-[#7395a3] font-normal">/ 100</span>
+              {graph.blast_radius_score} <span className="text-xs text-[#64748B] font-normal">/ 100</span>
             </div>
           </div>
 
-          <div className="w-12 h-12 rounded-full border-4 border-[#bfe0dc] flex items-center justify-center font-mono font-black text-xs">
-            <span className={isHighRisk ? 'text-rose-600' : 'text-[#0d9488]'}>
+          <div className="w-12 h-12 rounded-full border-4 border-[#E1E9F2] flex items-center justify-center font-mono font-black text-xs bg-white">
+            <span className={isHighRisk ? 'text-rose-600' : 'text-emerald-600'}>
               {isHighRisk ? 'CRIT' : 'LOW'}
             </span>
           </div>
@@ -78,13 +78,13 @@ export const BlastRadiusView: React.FC<BlastRadiusViewProps> = ({ graph, hostNam
       </div>
 
       {/* Interactive Topology Graph Visualizer */}
-      <div className="soc-card p-5 rounded-2xl border border-[#d2e8e5] space-y-4 font-mono text-xs shadow-sm">
-        <div className="flex items-center justify-between border-b border-[#e2efee] pb-3">
-          <h4 className="font-bold text-[#113644] flex items-center gap-2 text-xs">
-            <Zap className="w-4 h-4 text-[#0d9488]" />
+      <div className="soc-card-elevated p-5 rounded-2xl border border-[#E1E9F2] space-y-4 font-mono text-xs bg-white">
+        <div className="flex items-center justify-between border-b border-[#E1E9F2] pb-3">
+          <h4 className="font-bold text-[#111B36] flex items-center gap-2 text-xs">
+            <Zap className="w-4 h-4 text-[#7194B7]" />
             REACHABLE CROWN JEWELS & CREDENTIAL TRUST PATHS:
           </h4>
-          <span className="text-[11px] text-[#557784]">Click any node to inspect risk parameters</span>
+          <span className="text-[11px] text-[#64748B]">Click any node to inspect risk parameters</span>
         </div>
 
         {/* Nodes Grid */}
@@ -96,36 +96,36 @@ export const BlastRadiusView: React.FC<BlastRadiusViewProps> = ({ graph, hostNam
               <div
                 key={node.id}
                 onClick={() => setSelectedNode(node)}
-                className={`p-4 rounded-xl border transition cursor-pointer shadow-2xs ${
+                className={`p-4 rounded-xl border transition cursor-pointer soc-card-interactive ${
                   isFocal
-                    ? 'border-[#0d9488] bg-[#e0f2f1] shadow-xs'
+                    ? 'border-[#7194B7] bg-[#E6EEF7] shadow-sm'
                     : node.compromised
-                    ? 'border-rose-300 bg-rose-50/40'
+                    ? 'border-rose-300 bg-rose-50/60'
                     : isSelected
-                    ? 'border-teal-400 bg-teal-50/30'
-                    : 'bg-white border-[#d2e8e5] hover:border-[#99d5cf]'
+                    ? 'border-[#84A3C4] bg-[#F7FAFD]'
+                    : 'bg-white border-[#E1E9F2]'
                 }`}
               >
                 <div className="flex items-center justify-between gap-2 mb-2">
-                  <div className="flex items-center gap-2.5 font-bold text-[#113644]">
-                    <div className="p-1.5 rounded-lg bg-[#f0f7f6] border border-[#d2e8e5]">
+                  <div className="flex items-center gap-2.5 font-bold text-[#111B36]">
+                    <div className="p-1.5 rounded-lg bg-[#F7FAFD] border border-[#E1E9F2]">
                       {getNodeIcon(node.type)}
                     </div>
                     <span className="text-xs truncate">{node.label}</span>
                   </div>
                   <span className={`text-[9px] px-1.5 py-0.2 rounded font-mono uppercase font-black tracking-wider ${
                     node.criticality === 'critical'
-                      ? 'bg-rose-100 text-rose-800 border border-rose-200'
-                      : 'bg-[#eaf4f3] text-[#3d6574]'
+                      ? 'bg-red-100 text-red-700 border border-red-200'
+                      : 'bg-[#E6EEF7] text-[#64748B]'
                   }`}>
                     {node.criticality}
                   </span>
                 </div>
 
-                <div className="text-[11px] font-mono text-[#557784] flex items-center justify-between pt-2 border-t border-[#eaf4f3]">
-                  <span>Type: <strong className="text-[#143e4c] uppercase">{node.type}</strong></span>
+                <div className="text-[11px] font-mono text-[#64748B] flex items-center justify-between pt-2 border-t border-[#E1E9F2]">
+                  <span>Type: <strong className="text-[#111B36] uppercase">{node.type}</strong></span>
                   <span className={`font-bold ${
-                    isFocal ? 'text-[#0d766e]' : node.compromised ? 'text-rose-600' : 'text-[#0d9488]'
+                    isFocal ? 'text-[#7194B7]' : node.compromised ? 'text-rose-600' : 'text-emerald-600'
                   }`}>
                     {isFocal ? 'Focal Asset' : node.compromised ? 'Compromised' : 'Shielded Target'}
                   </span>
@@ -137,42 +137,42 @@ export const BlastRadiusView: React.FC<BlastRadiusViewProps> = ({ graph, hostNam
 
         {/* Selected Node Details Drawer */}
         {selectedNode && (
-          <div className="p-4 rounded-xl bg-[#f0f7f6] border border-[#bfe0dc] text-[#143e4c] space-y-2">
-            <div className="flex items-center justify-between border-b border-[#d8ecea] pb-2 text-xs">
-              <span className="font-bold text-[#143e4c] flex items-center gap-2">
-                <Eye className="w-4 h-4 text-[#0d9488]" />
+          <div className="p-4 rounded-xl bg-[#F7FAFD] border border-[#7194B7]/40 text-[#111B36] space-y-2">
+            <div className="flex items-center justify-between border-b border-[#E1E9F2] pb-2 text-xs">
+              <span className="font-bold text-[#7194B7] flex items-center gap-2">
+                <Eye className="w-4 h-4 text-[#7194B7]" />
                 NODE INSPECTOR: {selectedNode.label} ({selectedNode.id})
               </span>
-              <span className="text-[10px] text-[#557784]">Target Criticality: {selectedNode.criticality.toUpperCase()}</span>
+              <span className="text-[10px] text-[#64748B]">Target Criticality: {selectedNode.criticality.toUpperCase()}</span>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-[11px]">
-              <div>Resource Type: <strong className="text-[#143e4c] uppercase">{selectedNode.type}</strong></div>
-              <div>Lateral Reachability: <strong className="text-amber-800">1 Direct Hop</strong></div>
-              <div>Compromise Status: <strong className={selectedNode.compromised ? 'text-rose-600' : 'text-[#0d9488]'}>
+              <div>Resource Type: <strong className="text-[#111B36] uppercase">{selectedNode.type}</strong></div>
+              <div>Lateral Reachability: <strong className="text-amber-700">1 Direct Hop</strong></div>
+              <div>Compromise Status: <strong className={selectedNode.compromised ? 'text-rose-600' : 'text-emerald-600'}>
                 {selectedNode.compromised ? 'Active Exposure' : 'Protected'}
               </strong></div>
-              <div>Recommended Action: <strong className="text-[#0d766e]">Quarantine Subnet Route</strong></div>
+              <div>Recommended Action: <strong className="text-[#7194B7]">Quarantine Subnet Route</strong></div>
             </div>
           </div>
         )}
 
         {/* Identified Lateral Pivot Links */}
         <div className="pt-2">
-          <h5 className="text-[11px] font-mono text-[#557784] uppercase tracking-wider mb-2 font-bold">
+          <h5 className="text-[11px] font-mono text-[#64748B] uppercase tracking-wider mb-2 font-bold">
             Correlated Downstream Pivot Trajectories:
           </h5>
           <div className="space-y-1.5 font-mono text-xs">
             {graph.links.map((link, idx) => (
-              <div key={idx} className="flex items-center gap-2.5 p-2.5 rounded-xl bg-[#f0f7f6] border border-[#d2e8e5] text-[#143e4c]">
-                <span className="text-[#0d766e] font-bold">{link.source}</span>
-                <ArrowRight className="w-3.5 h-3.5 text-[#7397a6]" />
-                <span className="text-[#143e4c] font-bold">{link.target}</span>
-                <span className="text-[#c1dedb]">|</span>
-                <span className="text-amber-800 font-medium text-[11px]">Relationship: {link.relationship}</span>
+              <div key={idx} className="flex items-center gap-2.5 p-2.5 rounded-xl bg-[#F7FAFD] border border-[#E1E9F2] text-[#111B36]">
+                <span className="text-[#7194B7] font-bold">{link.source}</span>
+                <ArrowRight className="w-3.5 h-3.5 text-[#64748B]" />
+                <span className="text-purple-700 font-bold">{link.target}</span>
+                <span className="text-[#C1D0E2]">|</span>
+                <span className="text-amber-700 font-medium text-[11px]">Relationship: {link.relationship}</span>
                 <span className="ml-auto text-[10px] px-2 py-0.5 rounded font-black uppercase tracking-wider" style={{
-                  color: link.risk_level === 'high' ? '#be123c' : '#0d766e',
-                  backgroundColor: link.risk_level === 'high' ? '#fee2e2' : '#e0f2f1',
-                  border: link.risk_level === 'high' ? '1px solid #fecdd3' : '1px solid #a7f3d0'
+                  color: link.risk_level === 'high' ? '#b91c1c' : '#0e7490',
+                  backgroundColor: link.risk_level === 'high' ? '#fee2e2' : '#cffafe',
+                  border: link.risk_level === 'high' ? '1px solid #fca5a5' : '1px solid #a5f3fc'
                 }}>
                   {link.risk_level} Risk
                 </span>

@@ -37,7 +37,7 @@ class AuditLedger:
     def _create_genesis(self):
         genesis_time = "2026-10-18T00:00:00Z"
         prev_hash = "0" * 64
-        details = {"message": "Genesis Block of Patch Assurance Audit Ledger"}
+        details = {"message": "Genesis Block of BookEnd Audit Ledger"}
         canon = canonical_json_bytes(details).decode('utf-8')
         record_hash = sha256_hex(f"0:{genesis_time}:SYSTEM:GENESIS:system:{prev_hash}:{canon}")
         record = AuditRecord(

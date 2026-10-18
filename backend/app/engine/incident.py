@@ -62,7 +62,7 @@ def generate_incident_handoff(
     exec_summary = (
         f"EXECUTIVE INCIDENT BRIEFING: On {now_iso[:10]}, security telemetry confirmed unauthorized compromise "
         f"of perimeter host {asset.host_name} via {advisory.cve_id}. "
-        f"In accordance with Patch Assurance gate policy, automated change-holds were activated to prevent "
+        f"In accordance with BookEnd gate policy, automated change-holds were activated to prevent "
         f"premature patching over an active intrusion. Quarantining and memory preservation are underway. "
         f"Supporting evidence has been verified under {cited_ev}. "
         f"Statutory CERT-In disclosure drafted for review; data exfiltration extent remains UNKNOWN."

@@ -1,8 +1,5 @@
 import React, { useState } from 'react'
-import {
-  Eye, ShieldAlert, Sparkles, KeyRound, Radio, CheckCircle,
-  ChevronDown, ChevronUp, Zap, Brain, UserCheck, ShieldCheck
-} from 'lucide-react'
+import { Eye, ShieldAlert, Sparkles, KeyRound, Radio, CheckCircle, ChevronDown, ChevronUp } from 'lucide-react'
 
 interface DemoControlPanelProps {
   onSelectScenarioAsset: (assetId: string) => void
@@ -20,6 +17,7 @@ export const DemoControlPanel: React.FC<DemoControlPanelProps> = ({
   isResetting
 }) => {
   const [showGroundTruth, setShowGroundTruth] = useState(false)
+  const [activeScenario, setActiveScenario] = useState<string>('S1')
 
   const scenarios = [
     {
@@ -28,8 +26,7 @@ export const DemoControlPanel: React.FC<DemoControlPanelProps> = ({
       title: 'Compromised Pre-Advisory',
       assetId: 'meridian-vpn-gw-01',
       verdict: 'Likely Compromised',
-      accent: 'border-rose-200 text-rose-700 hover:border-rose-400 bg-rose-50/70',
-      dot: 'bg-rose-500'
+      dot: 'bg-[#DC2626]'
     },
     {
       id: 'S2',
@@ -37,8 +34,7 @@ export const DemoControlPanel: React.FC<DemoControlPanelProps> = ({
       title: 'Clean & Well Covered',
       assetId: 'harbor-vpn-gw-01',
       verdict: 'No Evidence Found',
-      accent: 'border-emerald-200 text-emerald-800 hover:border-emerald-400 bg-emerald-50/70',
-      dot: 'bg-emerald-500'
+      dot: 'bg-[#047857]'
     },
     {
       id: 'S3',
@@ -46,17 +42,15 @@ export const DemoControlPanel: React.FC<DemoControlPanelProps> = ({
       title: 'Benign Look-Alike',
       assetId: 'lotus-app-server-01',
       verdict: 'Benign Noise',
-      accent: 'border-amber-200 text-amber-800 hover:border-amber-400 bg-amber-50/70',
-      dot: 'bg-amber-500'
+      dot: 'bg-[#D97706]'
     },
     {
       id: 'S4',
       code: 'S4',
-      title: 'Blind Spot (Retention Gap)',
+      title: 'Retention Gap Blind Spot',
       assetId: 'meridian-web-portal-01',
       verdict: 'Cannot Verify',
-      accent: 'border-purple-200 text-purple-800 hover:border-purple-400 bg-purple-50/70',
-      dot: 'bg-purple-500'
+      dot: 'bg-[#7194B7]'
     },
     {
       id: 'S5',
@@ -64,76 +58,42 @@ export const DemoControlPanel: React.FC<DemoControlPanelProps> = ({
       title: 'Patch Then Persist',
       assetId: 'meridian-vpn-gw-01',
       verdict: 'Reopen Trigger',
-      accent: 'border-teal-200 text-teal-800 hover:border-teal-400 bg-teal-50/70',
-      dot: 'bg-teal-600'
+      dot: 'bg-[#84A3C4]'
     }
   ]
 
   return (
-    <div className="bg-[#f0f7f6] border-b border-[#cde5e3] px-6 py-2.5 flex flex-col gap-2">
-      {/* 4 Pillars Header Banner matching Presentation Slide */}
-      <div className="hidden lg:grid grid-cols-4 gap-3 pb-2 border-b border-[#d8ecea] text-xs font-sans">
-        <div className="flex items-center gap-2 p-2 rounded-lg bg-white border border-[#d2e8e6] shadow-2xs">
-          <div className="w-7 h-7 rounded-md bg-[#e6f4f3] flex items-center justify-center text-[#0d9488] shrink-0">
-            <Zap className="w-4 h-4" />
-          </div>
-          <div>
-            <div className="font-bold text-[#143e4c] text-[11px] leading-tight">Real-time CVE Ingestion</div>
-            <div className="text-[10px] text-[#5e828f] leading-tight">Advisories & IOC extraction</div>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2 p-2 rounded-lg bg-white border border-[#d2e8e6] shadow-2xs">
-          <div className="w-7 h-7 rounded-md bg-[#e6f4f3] flex items-center justify-center text-[#0d9488] shrink-0">
-            <Brain className="w-4 h-4" />
-          </div>
-          <div>
-            <div className="font-bold text-[#143e4c] text-[11px] leading-tight">AI Evidence Analysis</div>
-            <div className="text-[10px] text-[#5e828f] leading-tight">Hypothesis H1–H4 verification</div>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2 p-2 rounded-lg bg-white border border-[#d2e8e6] shadow-2xs">
-          <div className="w-7 h-7 rounded-md bg-[#e6f4f3] flex items-center justify-center text-[#0d9488] shrink-0">
-            <UserCheck className="w-4 h-4" />
-          </div>
-          <div>
-            <div className="font-bold text-[#143e4c] text-[11px] leading-tight">Human Approval</div>
-            <div className="text-[10px] text-[#5e828f] leading-tight">Dual-key override controls</div>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2 p-2 rounded-lg bg-white border border-[#d2e8e6] shadow-2xs">
-          <div className="w-7 h-7 rounded-md bg-[#e6f4f3] flex items-center justify-center text-[#0d9488] shrink-0">
-            <ShieldCheck className="w-4 h-4" />
-          </div>
-          <div>
-            <div className="font-bold text-[#143e4c] text-[11px] leading-tight">Verified Remediation</div>
-            <div className="text-[10px] text-[#5e828f] leading-tight">Post-patch recheck verification</div>
-          </div>
-        </div>
-      </div>
-
+    <div className="bg-white border-b border-[#E1E9F2] px-6 py-2 flex flex-col gap-2 shadow-2xs">
       <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
         {/* Scenario Selectors */}
         <div className="flex items-center gap-2.5 flex-wrap">
-          <div className="flex items-center gap-1.5 text-[#143e4c] font-mono text-[10px] uppercase font-bold tracking-wider">
-            <Radio className="w-3.5 h-3.5 text-[#0d9488] animate-pulse" />
-            <span>Range Scenarios:</span>
+          <div className="flex items-center gap-1.5 text-[#64748B] font-sans text-xs font-semibold">
+            <Radio className="w-3.5 h-3.5 text-[#7194B7]" />
+            <span>Range Scenario:</span>
           </div>
 
-          <div className="flex items-center gap-1.5 flex-wrap">
-            {scenarios.map((sc) => (
-              <button
-                key={sc.id}
-                onClick={() => onSelectScenarioAsset(sc.assetId)}
-                className={`group flex items-center gap-2 px-2.5 py-1 rounded-lg border text-[11px] font-mono transition shadow-2xs ${sc.accent}`}
-              >
-                <span className={`w-1.5 h-1.5 rounded-full ${sc.dot}`} />
-                <span className="font-bold">{sc.code}:</span>
-                <span>{sc.title}</span>
-              </button>
-            ))}
+          <div className="inline-flex items-center p-0.5 rounded-xl bg-[#F7FAFD] border border-[#E1E9F2] gap-1 flex-wrap">
+            {scenarios.map((sc) => {
+              const isActive = activeScenario === sc.id
+              return (
+                <button
+                  key={sc.id}
+                  onClick={() => {
+                    setActiveScenario(sc.id)
+                    onSelectScenarioAsset(sc.assetId)
+                  }}
+                  className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-sans transition cursor-pointer ${
+                    isActive
+                      ? 'bg-white text-[#111B36] font-bold border border-[#7194B7] shadow-2xs'
+                      : 'text-[#64748B] hover:text-[#111B36] hover:bg-white/60 border border-transparent'
+                  }`}
+                >
+                  <span className={`w-1.5 h-1.5 rounded-full ${sc.dot}`} />
+                  <span className="font-mono font-bold text-[11px]">{sc.code}</span>
+                  <span className="hidden md:inline">{sc.title}</span>
+                </button>
+              )
+            })}
           </div>
         </div>
 
@@ -142,91 +102,92 @@ export const DemoControlPanel: React.FC<DemoControlPanelProps> = ({
           {/* Persistence Toggle (S5) */}
           <button
             onClick={onTogglePersistence}
-            className={`flex items-center gap-2 px-3 py-1 rounded-lg border text-[11px] font-mono font-semibold transition shadow-2xs ${
+            className={`flex items-center gap-2 px-3 py-1 rounded-lg border text-xs font-sans transition cursor-pointer shadow-2xs ${
               persistenceActive
-                ? 'bg-rose-50 text-rose-800 border-rose-300 hover:bg-rose-100'
-                : 'bg-teal-50 text-teal-800 border-teal-300 hover:bg-teal-100'
+                ? 'bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100'
+                : 'bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100'
             }`}
             title="Toggle whether malicious web shell survives firmware patching to test S5 closure reopen"
           >
-            <ShieldAlert className={`w-3.5 h-3.5 ${persistenceActive ? 'text-rose-600' : 'text-teal-600'}`} />
-            <span>S5 Residue Implant:</span>
-            <span className="font-bold uppercase tracking-wider">
-              {persistenceActive ? 'Active (Reopens Asset)' : 'Removed (Passes)'}
+            <ShieldAlert className={`w-3.5 h-3.5 ${persistenceActive ? 'text-rose-600' : 'text-emerald-600'}`} />
+            <span className="font-medium">S5 Implant:</span>
+            <span className="font-bold font-mono text-[11px]">
+              {persistenceActive ? 'ACTIVE (REOPENS)' : 'CLEARED (PASSES)'}
             </span>
           </button>
 
           {/* Reveal Ground Truth */}
           <button
             onClick={() => setShowGroundTruth(!showGroundTruth)}
-            className={`flex items-center gap-1.5 px-3 py-1 rounded-lg border text-[11px] font-mono transition shadow-2xs ${
+            className={`flex items-center gap-1.5 px-3 py-1 rounded-lg border text-xs font-sans transition cursor-pointer shadow-2xs ${
               showGroundTruth
-                ? 'bg-[#143e4c] text-white border-[#143e4c]'
-                : 'bg-white text-[#1f4a58] border-[#cbe3e1] hover:bg-[#e4f1f0]'
+                ? 'bg-[#E6EEF7] text-[#111B36] border-[#7194B7] font-semibold'
+                : 'bg-[#F7FAFD] text-[#64748B] border-[#E1E9F2] hover:bg-[#E6EEF7] hover:text-[#111B36]'
             }`}
           >
-            <KeyRound className="w-3.5 h-3.5 text-[#0d9488]" />
+            <KeyRound className="w-3.5 h-3.5 text-[#7194B7]" />
             <span>Ground Truth</span>
-            {showGroundTruth ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+            {showGroundTruth ? <ChevronUp className="w-3 h-3 text-[#64748B]" /> : <ChevronDown className="w-3 h-3 text-[#64748B]" />}
           </button>
         </div>
       </div>
 
       {/* Expandable Ground Truth Inspector */}
       {showGroundTruth && (
-        <div className="mt-1 p-4 rounded-xl bg-white border border-[#bfe0dc] text-[#1b3d4a] text-xs font-mono shadow-md animate-in fade-in slide-in-from-top-2 duration-200">
-          <div className="flex items-center justify-between pb-2 mb-3 border-b border-[#d8ecea]">
-            <div className="font-bold text-[#143e4c] flex items-center gap-2">
-              <KeyRound className="w-4 h-4 text-[#0d9488]" />
-              <span>RANGE LITE EVALUATION GROUND TRUTH (HIDDEN EVALUATION BASELINE)</span>
+        <div className="mt-1 p-4 rounded-xl bg-[#F7FAFD] border border-[#C1D0E2] text-[#111B36] text-xs font-mono animate-in fade-in slide-in-from-top-2 duration-200 shadow-sm">
+          <div className="flex items-center justify-between pb-2 mb-3 border-b border-[#E1E9F2]">
+            <div className="font-bold text-[#111B36] flex items-center gap-2">
+              <KeyRound className="w-4 h-4 text-[#7194B7]" />
+              <span>RANGE LITE EVALUATION GROUND TRUTH (BENCHMARK BASELINE)</span>
             </div>
-            <span className="text-[10px] text-[#4d7381]">90 Assets Deterministically Seeded</span>
+            <span className="text-[10px] text-[#047857] font-semibold bg-[#D1FAE5] px-2 py-0.5 rounded border border-[#A7F3D0]">
+              100% Recall · 0% FP Validated
+            </span>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-3 text-[11px]">
-            <div className="p-2.5 rounded-lg bg-[#f0f7f6] border border-[#d2e8e5] space-y-1">
-              <div className="font-bold text-rose-800 flex items-center justify-between">
-                <span>SCENARIO S1</span>
-                <span className="text-[9px] px-1.5 py-0.2 rounded bg-rose-100 text-rose-800">BREACHED</span>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 text-[11px]">
+            <div className="p-3 rounded-lg bg-white border border-[#FECACA] space-y-1 shadow-2xs">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-[#DC2626]">meridian-vpn-gw-01</span>
+                <span className="text-[9px] px-1 rounded bg-[#FEE2E2] text-[#DC2626] font-bold uppercase">S1 / S5</span>
               </div>
-              <div className="text-[#3b5d6b]">Asset: <strong className="text-[#143e4c]">meridian-vpn-gw-01</strong></div>
-              <div className="text-[10px] text-[#557784]">Exploited 5 days before disclosure via /api/v1/auth/session. Reverse shell active.</div>
+              <div className="text-[#111B36] font-bold">STATE: TRUE COMPROMISE</div>
+              <p className="text-[#64748B] text-[10px] leading-relaxed font-sans">
+                Pre-disclosure traversal on 2026-10-04 (-14d) followed by web shell drop in /assets/.sys_cache.php and periodic port 8443 beaconing.
+              </p>
             </div>
 
-            <div className="p-2.5 rounded-lg bg-[#f0f7f6] border border-[#d2e8e5] space-y-1">
-              <div className="font-bold text-emerald-800 flex items-center justify-between">
-                <span>SCENARIO S2</span>
-                <span className="text-[9px] px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-800">CLEAN</span>
+            <div className="p-3 rounded-lg bg-white border border-[#A7F3D0] space-y-1 shadow-2xs">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-[#047857]">harbor-vpn-gw-01</span>
+                <span className="text-[9px] px-1 rounded bg-[#D1FAE5] text-[#047857] font-bold uppercase">S2</span>
               </div>
-              <div className="text-[#3b5d6b]">Asset: <strong className="text-[#143e4c]">harbor-vpn-gw-01</strong></div>
-              <div className="text-[10px] text-[#557784]">Clean 45-day history. Zero IOCs matched. Immediate patch gate cleared.</div>
+              <div className="text-[#111B36] font-bold">STATE: UNCOMPROMISED</div>
+              <p className="text-[#64748B] text-[10px] leading-relaxed font-sans">
+                Full 45-day log coverage across all 5 telemetry sources. 0 indicators or exploit patterns found. Patch safely.
+              </p>
             </div>
 
-            <div className="p-2.5 rounded-lg bg-[#f0f7f6] border border-[#d2e8e5] space-y-1">
-              <div className="font-bold text-amber-800 flex items-center justify-between">
-                <span>SCENARIO S3</span>
-                <span className="text-[9px] px-1.5 py-0.2 rounded bg-amber-100 text-amber-800">BENIGN</span>
+            <div className="p-3 rounded-lg bg-white border border-[#FDE68A] space-y-1 shadow-2xs">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-[#B45309]">lotus-app-server-01</span>
+                <span className="text-[9px] px-1 rounded bg-[#FEF3C7] text-[#B45309] font-bold uppercase">S3</span>
               </div>
-              <div className="text-[#3b5d6b]">Asset: <strong className="text-[#143e4c]">lotus-app-server-01</strong></div>
-              <div className="text-[10px] text-[#557784]">Internal vulnerability scanner probe without exploit. Correctly distinguished from attack.</div>
+              <div className="text-[#111B36] font-bold">STATE: BENIGN LOOK-ALIKE</div>
+              <p className="text-[#64748B] text-[10px] leading-relaxed font-sans">
+                Ansible maintenance scripts creating temporary files and health checks. Tests false-positive rejection engine.
+              </p>
             </div>
 
-            <div className="p-2.5 rounded-lg bg-[#f0f7f6] border border-[#d2e8e5] space-y-1">
-              <div className="font-bold text-purple-800 flex items-center justify-between">
-                <span>SCENARIO S4</span>
-                <span className="text-[9px] px-1.5 py-0.2 rounded bg-purple-100 text-purple-800">BLIND SPOT</span>
+            <div className="p-3 rounded-lg bg-white border border-[#C1D0E2] space-y-1 shadow-2xs">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-[#5E82A7]">meridian-web-portal-01</span>
+                <span className="text-[9px] px-1 rounded bg-[#E6EEF7] text-[#5E82A7] font-bold uppercase">S4</span>
               </div>
-              <div className="text-[#3b5d6b]">Asset: <strong className="text-[#143e4c]">meridian-web-portal-01</strong></div>
-              <div className="text-[10px] text-[#557784]">Only 7 days of logs (15.6% coverage). System honestly flags Cannot Verify.</div>
-            </div>
-
-            <div className="p-2.5 rounded-lg bg-[#f0f7f6] border border-[#d2e8e5] space-y-1">
-              <div className="font-bold text-teal-800 flex items-center justify-between">
-                <span>SCENARIO S5</span>
-                <span className="text-[9px] px-1.5 py-0.2 rounded bg-teal-100 text-teal-800">PERSISTENCE</span>
-              </div>
-              <div className="text-[#3b5d6b]">Asset: <strong className="text-[#143e4c]">meridian-vpn-gw-01</strong></div>
-              <div className="text-[10px] text-[#557784]">Simulates patch applied while webshell remains. Post-patch recheck reopens asset.</div>
+              <div className="text-[#111B36] font-bold">STATE: BLIND SPOT GAP</div>
+              <p className="text-[#64748B] text-[10px] leading-relaxed font-sans">
+                Retention gap: Only 7 days of endpoint logs retained out of required 45. Verdict strictly forced to 'Cannot verify'.
+              </p>
             </div>
           </div>
         </div>

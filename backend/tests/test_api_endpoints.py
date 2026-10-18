@@ -13,7 +13,7 @@ def test_health_and_root(client):
     res = client.get("/")
     assert res.status_code == 200
     data = res.json()
-    assert data["app"] == "Patch Assurance"
+    assert data["app"] == "BookEnd"
     assert data["simulated_data"] is True
 
 def test_list_tenants(client):

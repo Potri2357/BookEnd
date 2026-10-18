@@ -1,5 +1,5 @@
 """
-Cryptographic signing and verification service for Patch Assurance Proof Packs.
+Cryptographic signing and verification service for BookEnd Proof Packs.
 Implements Ed25519 asymmetric signatures and canonical JSON SHA-256 tree hashing.
 """
 import base64
