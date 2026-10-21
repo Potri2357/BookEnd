@@ -2,16 +2,44 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%237194B7' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z'/></svg>" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Postern | Patch with proof.</title>
-    <meta name="description" content="Postern closes the gap between 'we patched' and 'we are safe'. Forensic pre-disclosure hunting, automated patch gates, closure verification, and signed proof packs." />
-    <meta name="theme-color" content="#F7FAFD" />
+    <title>Postern | Cryptographic Patch Assurance & Forensic Gate</title>
+    <meta name="description" content="Postern closes the gap between 'we patched' and 'we are safe'. Air-gapped forensic hunting, deterministic DuckDB columnar analysis, automated patch gates, and RFC 8785 Ed25519 signed digital proof packs." />
+    <meta name="theme-color" content="#F4F7FC" />
+    <script>
+      (function() {
+        try {
+          var mode = localStorage.getItem('postern_theme_mode');
+          if (mode === 'dark') {
+            document.documentElement.classList.add('dark');
+          } else {
+            document.documentElement.classList.remove('dark');
+          }
+        } catch (e) {}
+      })();
+    </script>
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Postern Enterprise Core" />
+    <meta property="og:title" content="Postern | Patch with proof." />
+    <meta property="og:description" content="Cryptographic patch gate and forensic assurance engine. Verify absence of pre-advisory compromise with Ed25519 signed proof packs." />
+    <meta property="og:url" content="https://postern-five.vercel.app" />
+    <meta property="og:image" content="https://postern-five.vercel.app/favicon.svg" />
+
+    <!-- Twitter / X -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Postern | Patch with proof." />
+    <meta name="twitter:description" content="Cryptographic patch gate and forensic assurance engine. Verify absence of pre-advisory compromise with Ed25519 signed proof packs." />
+    <meta name="twitter:image" content="https://postern-five.vercel.app/favicon.svg" />
+
+    <!-- Typography -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
   </head>
-  <body class="bg-[#F7FAFD] text-[#111B36] antialiased selection:bg-[#C1D0E2] selection:text-[#111B36] font-sans">
+  <body class="antialiased selection:bg-blue-200 dark:selection:bg-blue-900 font-sans transition-colors duration-200">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

@@ -22,3 +22,7 @@ dist/
 # Local Secrets & Runtime State
 .signing_key*
 audit_ledger.json
+user_actions.json
+published_keys.json
+backups/
+*.backup

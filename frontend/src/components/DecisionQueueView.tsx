@@ -1,13 +1,15 @@
-import React, { useState } from 'react'
+import React, { useState, useMemo } from 'react'
 import {
   Clock, ShieldAlert, CheckCircle2, AlertTriangle,
-  Lock, Unlock, ChevronRight, CheckCheck, Search,
-  Filter, ArrowUpDown, ShieldCheck, ShieldX, Sparkles,
-  Info, HelpCircle, ChevronDown, Check
+  Lock, ChevronRight, CheckCheck, Search,
+  Filter, ShieldCheck, ShieldX,
+  HelpCircle, ChevronDown, Check, Download,
+  Layers, ArrowLeft, ArrowRight, Eye, Shield, UserCheck
 } from 'lucide-react'
-import { QueueItem } from '../types'
+import { QueueItem, UserRole } from '../types'
 import { ExplainVerdictModal } from './ExplainVerdictModal'
 import { BulkApproveSafetyModal } from './BulkApproveSafetyModal'
+import { BASE_URL } from '../api'
 
 interface DecisionQueueViewProps {
   queue: QueueItem[]
@@ -20,6 +22,7 @@ interface DecisionQueueViewProps {
   isBulkApproving: boolean
   selectedTenant: string
   isLoading?: boolean
+  currentRole?: UserRole
 }
 
 export const DecisionQueueView: React.FC<DecisionQueueViewProps> = ({
@@ -32,62 +35,88 @@ export const DecisionQueueView: React.FC<DecisionQueueViewProps> = ({
   onReviewAsset,
   isBulkApproving,
   selectedTenant,
-  isLoading = false
+  isLoading = false,
+  currentRole = 'admin'
 }) => {
   const [searchTerm, setSearchTerm] = useState('')
   const [verdictFilter, setVerdictFilter] = useState<string>('all')
   const [tierFilter, setTierFilter] = useState<string>('all')
-  const [kpiFilter, setKpiFilter] = useState<'all' | 'emergency' | 'compromised' | 'gaps' | 'safe'>('all')
+  const [savedView, setSavedView] = useState<'all' | 'emergency' | 'compromised' | 'gaps' | 'safe'>('all')
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize, setPageSize] = useState(8)
+
+  // Selection state for bulk actions
+  const [selectedAssetIds, setSelectedAssetIds] = useState<Set<string>>(new Set())
 
   // Modals state
   const [selectedVerdictItem, setSelectedVerdictItem] = useState<QueueItem | null>(null)
   const [showBulkSafetyModal, setShowBulkSafetyModal] = useState<boolean>(false)
   const [toastNotification, setToastNotification] = useState<string | null>(null)
 
-  // Custom Dropdown Open States
+  // Dropdown states
   const [isVerdictDropdownOpen, setIsVerdictDropdownOpen] = useState(false)
   const [isTierDropdownOpen, setIsTierDropdownOpen] = useState(false)
 
+  // Role permissions breakdown
+  const canApprove = currentRole === 'admin' || currentRole === 'approver'
+  const canContain = currentRole === 'admin' || currentRole === 'approver' || currentRole === 'analyst'
+  const isReadOnly = currentRole === 'auditor' || currentRole === 'viewer'
+
   const verdictOptions = [
-    { value: 'all', label: 'All Verdicts', desc: 'Complete queue triage', dot: 'bg-[#64748B]' },
-    { value: 'Likely compromised', label: 'Likely Compromised', desc: 'Active adversary detected', badge: 'Contain First', dot: 'bg-[#DC2626]' },
-    { value: 'Suspicious', label: 'Suspicious', desc: 'Anomalous execution', badge: 'Investigate', dot: 'bg-[#D97706]' },
-    { value: 'Cannot verify', label: 'Cannot Verify', desc: 'Retention / telemetry blind spot', badge: 'Telemetry Gap', dot: 'bg-[#7194B7]' },
-    { value: 'No evidence found', label: 'No Evidence Found', desc: 'Clean forensics window', badge: 'Safe to Patch', dot: 'bg-[#047857]' }
+    { value: 'all', label: 'All Verdicts', desc: 'Complete queue triage', dot: 'bg-slate-500' },
+    { value: 'Likely compromised', label: 'Likely Compromised', desc: 'Active adversary detected', badge: 'Contain First', dot: 'bg-rose-600' },
+    { value: 'Suspicious', label: 'Suspicious', desc: 'Anomalous execution', badge: 'Investigate', dot: 'bg-amber-600' },
+    { value: 'Cannot verify', label: 'Cannot Verify', desc: 'Retention / telemetry blind spot', badge: 'Telemetry Gap', dot: 'bg-blue-600' },
+    { value: 'No evidence found', label: 'No Evidence Found', desc: 'Clean forensics window', badge: 'Safe to Patch', dot: 'bg-emerald-600' }
   ]
 
   const tierOptions = [
-    { value: 'all', label: 'All Tiers', desc: 'All exposure SLAs', dot: 'bg-[#64748B]' },
-    { value: 'emergency', label: 'Emergency', desc: 'Critical exposure', badge: '12h SLA', dot: 'bg-[#DC2626]' },
-    { value: 'high', label: 'High', desc: 'Internet-facing host', badge: '24h SLA', dot: 'bg-[#D97706]' },
-    { value: 'standard', label: 'Standard', desc: 'Internal network asset', badge: '72h SLA', dot: 'bg-[#1D63ED]' }
+    { value: 'all', label: 'All Tiers', desc: 'All exposure SLAs', dot: 'bg-slate-500' },
+    { value: 'emergency', label: 'Emergency', desc: 'Critical exposure', badge: '12h SLA', dot: 'bg-rose-600' },
+    { value: 'high', label: 'High', desc: 'Internet-facing host', badge: '24h SLA', dot: 'bg-amber-600' },
+    { value: 'standard', label: 'Standard', desc: 'Internal network asset', badge: '72h SLA', dot: 'bg-blue-600' }
   ]
 
   const currentVerdict = verdictOptions.find((v) => v.value === verdictFilter) || verdictOptions[0]
   const currentTier = tierOptions.find((t) => t.value === tierFilter) || tierOptions[0]
 
   // Filtered queue items
-  const filteredQueue = queue.filter((item) => {
-    const matchesSearch =
-      item.host_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.asset_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.owner.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesVerdict = verdictFilter === 'all' || item.verdict_state === verdictFilter
-    const matchesTier = tierFilter === 'all' || item.exposure_tier === tierFilter
+  const filteredQueue = useMemo(() => {
+    return queue.filter((item) => {
+      const q = searchTerm.toLowerCase().trim()
+      const matchesSearch = !q ||
+        item.host_name.toLowerCase().includes(q) ||
+        item.asset_id.toLowerCase().includes(q) ||
+        item.owner.toLowerCase().includes(q) ||
+        (item.ip_address && item.ip_address.toLowerCase().includes(q))
+      
+      const matchesVerdict = verdictFilter === 'all' || item.verdict_state === verdictFilter
+      const matchesTier = tierFilter === 'all' || item.exposure_tier === tierFilter
 
-    const matchesKpi =
-      kpiFilter === 'all'
-        ? true
-        : kpiFilter === 'emergency'
-          ? item.exposure_tier === 'emergency'
-          : kpiFilter === 'compromised'
-            ? item.verdict_state === 'Likely compromised'
-            : kpiFilter === 'gaps'
-              ? item.verdict_state === 'Cannot verify'
-              : item.verdict_state === 'No evidence found'
+      const matchesSavedView =
+        savedView === 'all'
+          ? true
+          : savedView === 'emergency'
+            ? item.exposure_tier === 'emergency'
+            : savedView === 'compromised'
+              ? item.verdict_state === 'Likely compromised'
+              : savedView === 'gaps'
+                ? item.verdict_state === 'Cannot verify'
+                : item.verdict_state === 'No evidence found'
 
-    return matchesSearch && matchesVerdict && matchesTier && matchesKpi
-  })
+      return matchesSearch && matchesVerdict && matchesTier && matchesSavedView
+    })
+  }, [queue, searchTerm, verdictFilter, tierFilter, savedView])
+
+  // Pagination calculation
+  const totalItems = filteredQueue.length
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize))
+  const paginatedQueue = useMemo(() => {
+    const start = (currentPage - 1) * pageSize
+    return filteredQueue.slice(start, start + pageSize)
+  }, [filteredQueue, currentPage, pageSize])
 
   // Aggregated metrics
   const emergencyCount = queue.filter((i) => i.exposure_tier === 'emergency').length
@@ -102,79 +131,68 @@ export const DecisionQueueView: React.FC<DecisionQueueViewProps> = ({
     const h = Math.floor(sec / 3600)
     const m = Math.floor((sec % 3600) / 60)
     const s = sec % 60
-    return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
+    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
   }
 
-  const handleKpiClick = (type: 'emergency' | 'compromised' | 'gaps' | 'safe') => {
-    setKpiFilter((prev) => (prev === type ? 'all' : type))
+  const toggleSelectAsset = (assetId: string) => {
+    setSelectedAssetIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(assetId)) next.delete(assetId)
+      else next.add(assetId)
+      return next
+    })
   }
 
-  const getVerdictPill = (item: QueueItem) => {
+  const toggleSelectAllPage = () => {
+    if (paginatedQueue.every((item) => selectedAssetIds.has(item.asset_id))) {
+      setSelectedAssetIds((prev) => {
+        const next = new Set(prev)
+        paginatedQueue.forEach((i) => next.delete(i.asset_id))
+        return next
+      })
+    } else {
+      setSelectedAssetIds((prev) => {
+        const next = new Set(prev)
+        paginatedQueue.forEach((i) => next.add(i.asset_id))
+        return next
+      })
+    }
+  }
+
+  const getVerdictBadge = (item: QueueItem, large = false) => {
     const state = item.verdict_state
+    const baseClass = large
+      ? 'px-3 py-1.5 rounded-xl text-xs font-bold inline-flex items-center gap-2 font-mono shadow-xs'
+      : 'px-2.5 py-1 rounded-lg text-[11px] font-bold inline-flex items-center gap-1.5 font-mono shadow-xs'
+
     switch (state) {
       case 'Likely compromised':
         return (
-          <button
-            onClick={(e) => {
-              e.stopPropagation()
-              setSelectedVerdictItem(item)
-            }}
-            title="Click to inspect evidence factors and confidence"
-            className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#FEE2E2] text-[#DC2626] border border-[#FECACA] font-mono hover:border-[#DC2626] transition cursor-pointer group"
-          >
-            <span className="w-1.5 h-1.5 rounded-full bg-[#DC2626] animate-pulse" />
+          <span className={`${baseClass} bg-rose-50 text-rose-700 border border-rose-200 dark:bg-[#1A1314] dark:text-[#F87171] dark:border-[#3D1F23]`}>
+            <ShieldAlert className={large ? 'w-4 h-4 text-rose-500' : 'w-3.5 h-3.5 text-rose-500'} />
             <span>Likely Compromised</span>
-            <HelpCircle className="w-3 h-3 text-[#DC2626]/70 group-hover:text-[#DC2626]" />
-          </button>
+          </span>
         )
       case 'Suspicious':
         return (
-          <button
-            onClick={(e) => {
-              e.stopPropagation()
-              setSelectedVerdictItem(item)
-            }}
-            title="Click to inspect evidence factors"
-            className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#FEF3C7] text-[#B45309] border border-[#FDE68A] font-mono hover:border-[#B45309] transition cursor-pointer group"
-          >
-            <span className="w-1.5 h-1.5 rounded-full bg-[#D97706]" />
-            <span>Suspicious</span>
-            <HelpCircle className="w-3 h-3 text-[#B45309]/70 group-hover:text-[#B45309]" />
-          </button>
+          <span className={`${baseClass} bg-amber-50 text-amber-800 border border-amber-200 dark:bg-[#1A1713] dark:text-[#FBBF24] dark:border-[#3D3219]`}>
+            <AlertTriangle className={large ? 'w-4 h-4 text-amber-500' : 'w-3.5 h-3.5 text-amber-500'} />
+            <span>Suspicious Execution</span>
+          </span>
         )
       case 'Cannot verify':
         return (
-          <button
-            onClick={(e) => {
-              e.stopPropagation()
-              setSelectedVerdictItem(item)
-            }}
-            title="Click to view retention blind spots"
-            className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#E6EEF7] text-[#5E82A7] border border-[#C1D0E2] font-mono hover:border-[#5E82A7] transition cursor-pointer group"
-          >
-            <span className="w-1.5 h-1.5 rounded-full bg-[#7194B7]" />
-            <span>Cannot Verify</span>
-            <HelpCircle className="w-3 h-3 text-[#5E82A7]/70 group-hover:text-[#5E82A7]" />
-          </button>
+          <span className={`${baseClass} bg-slate-50 text-slate-800 border border-slate-200 dark:bg-[#18181B] dark:text-[#E4E4E7] dark:border-[#2E2E34]`}>
+            <ShieldX className={large ? 'w-4 h-4 text-slate-400' : 'w-3.5 h-3.5 text-slate-400'} />
+            <span>Cannot Verify (Blindspot)</span>
+          </span>
         )
       default:
         return (
-          <button
-            onClick={(e) => {
-              e.stopPropagation()
-              setSelectedVerdictItem(item)
-            }}
-            title="Click to inspect verified clean proof"
-            className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#D1FAE5] text-[#047857] border border-[#A7F3D0] font-mono hover:border-[#047857] transition cursor-pointer group"
-          >
-            {item.is_approved ? (
-              <CheckCheck className="w-3.5 h-3.5 text-[#047857]" />
-            ) : (
-              <span className="w-1.5 h-1.5 rounded-full bg-[#059669]" />
-            )}
-            <span>{item.is_approved ? '✓ Approved & Released' : 'No Evidence Found'}</span>
-            <HelpCircle className="w-3 h-3 text-[#047857]/70 group-hover:text-[#047857]" />
-          </button>
+          <span className={`${baseClass} bg-emerald-50 text-emerald-800 border border-emerald-200 dark:bg-[#121915] dark:text-[#4ADE80] dark:border-[#1E3B29]`}>
+            <ShieldCheck className={large ? 'w-4 h-4 text-emerald-500' : 'w-3.5 h-3.5 text-emerald-500'} />
+            <span>{item.is_approved ? 'Approved & Released' : 'No Evidence Found'}</span>
+          </span>
         )
     }
   }
@@ -182,665 +200,517 @@ export const DecisionQueueView: React.FC<DecisionQueueViewProps> = ({
   const getTierChip = (tier: string) => {
     if (tier === 'emergency') {
       return (
-        <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase tracking-wider bg-[#FEE2E2] text-[#DC2626] border border-[#FECACA] inline-flex items-center gap-1">
-          <span className="w-1 h-1 rounded-full bg-[#DC2626] animate-ping" />
-          EMERGENCY (12H)
+        <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase tracking-wider bg-rose-100 text-rose-700 border border-rose-300 dark:bg-[#1A1314] dark:text-[#F87171] dark:border-[#3D1F23] inline-flex items-center gap-1">
+          <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-ping" />
+          EMERGENCY 12H
         </span>
       )
     }
     if (tier === 'high') {
       return (
-        <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase tracking-wider bg-[#FEF3C7] text-[#B45309] border border-[#FDE68A]">
-          HIGH (24H)
+        <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase tracking-wider bg-slate-100 text-slate-800 border border-slate-300 dark:bg-[#18181B] dark:text-[#E4E4E7] dark:border-[#2E2E34]">
+          HIGH 24H
         </span>
       )
     }
     return (
-      <span className="px-2 py-0.5 rounded text-[10px] font-mono font-medium uppercase tracking-wider bg-[#E6EEF7] text-[#64748B] border border-[#E1E9F2]">
-        STANDARD (72H)
+      <span className="px-2 py-0.5 rounded text-[10px] font-mono font-medium uppercase tracking-wider bg-slate-100 text-slate-700 border border-slate-300 dark:bg-[#141416] dark:text-[#8E8E93] dark:border-[#222225]">
+        STANDARD 72H
       </span>
     )
   }
 
-  const renderContextualButton = (item: QueueItem) => {
-    if (item.is_approved) {
-      return (
-        <button
-          onClick={(e) => {
-            e.stopPropagation()
-            onSelectAsset(item.host_name)
-          }}
-          className="chip-btn bg-[#D1FAE5] text-[#047857] border-[#A7F3D0] hover:bg-[#A7F3D0]/40 text-xs font-bold inline-flex items-center gap-1.5 shadow-2xs"
-          title="Asset patch gate approved and released. Click to view story."
-        >
-          <CheckCheck className="w-4 h-4 text-[#047857]" />
-          <span>✓ Approved & Released</span>
-        </button>
-      )
-    }
-    if (item.is_contained) {
-      return (
-        <button
-          onClick={(e) => {
-            e.stopPropagation()
-            onSelectAsset(item.host_name)
-          }}
-          className="chip-btn bg-[#FEF3C7] text-[#B45309] border-[#FDE68A] hover:bg-[#FDE68A]/40 text-xs font-bold inline-flex items-center gap-1.5 shadow-2xs"
-          title="Asset quarantined to isolated VLAN. Click to view story."
-        >
-          <ShieldCheck className="w-4 h-4 text-[#B45309]" />
-          <span>✓ Contained & Isolated</span>
-        </button>
-      )
-    }
-    if (item.verdict_state === 'Likely compromised') {
-      return (
-        <button
-          onClick={(e) => {
-            e.stopPropagation()
-            if (onContainAsset) {
-              onContainAsset(item)
-              setToastNotification(`Host ${item.host_name} quarantined to isolated VLAN. Egress traffic blocked.`)
-              setTimeout(() => setToastNotification(null), 5000)
-            } else {
-              onSelectAsset(item.host_name)
-            }
-          }}
-          className="chip-btn chip-btn-emergency text-xs shadow-xs hover:shadow-md transition active:scale-95"
-          title="Quarantine compromised host to isolated network"
-        >
-          <ShieldAlert className="w-3.5 h-3.5" />
-          <span>Contain Asset</span>
-        </button>
-      )
-    }
-    if (item.is_audited) {
-      return (
-        <button
-          onClick={(e) => {
-            e.stopPropagation()
-            onSelectAsset(item.host_name)
-          }}
-          className="chip-btn bg-[#E6EEF7] text-[#1D63ED] border-[#BFDBFE] hover:bg-[#BFDBFE]/40 text-xs font-bold inline-flex items-center gap-1.5 shadow-2xs"
-          title="Retention blind spot audited. Click to view story."
-        >
-          <Check className="w-4 h-4 text-[#1D63ED]" />
-          <span>✓ Gap Audited</span>
-        </button>
-      )
-    }
-    if (item.verdict_state === 'Cannot verify') {
-      return (
-        <button
-          onClick={(e) => {
-            e.stopPropagation()
-            if (onAuditAsset) {
-              onAuditAsset(item)
-              setToastNotification(`Retention blind spot audit recorded for ${item.host_name}.`)
-              setTimeout(() => setToastNotification(null), 5000)
-            }
-            onSelectAsset(item.host_name)
-          }}
-          className="chip-btn chip-btn-secondary text-[#1D63ED] border-[#BFDBFE] hover:bg-[#EBF2FE] text-xs font-semibold active:scale-95 transition"
-        >
-          <Search className="w-3.5 h-3.5 text-[#1D63ED]" />
-          <span>Investigate Gap</span>
-        </button>
-      )
-    }
-    if (item.is_reviewed) {
-      return (
-        <button
-          onClick={(e) => {
-            e.stopPropagation()
-            onSelectAsset(item.host_name)
-          }}
-          className="chip-btn bg-[#FEF3C7] text-[#B45309] border-[#FDE68A] hover:bg-[#FDE68A]/40 text-xs font-bold inline-flex items-center gap-1.5 shadow-2xs"
-          title="Suspicious evidence reviewed. Click to view story."
-        >
-          <Check className="w-4 h-4 text-[#B45309]" />
-          <span>✓ Evidence Reviewed</span>
-        </button>
-      )
-    }
-    if (item.verdict_state === 'Suspicious') {
-      return (
-        <button
-          onClick={(e) => {
-            e.stopPropagation()
-            if (onReviewAsset) {
-              onReviewAsset(item)
-              setToastNotification(`Suspicious evidence reviewed and acknowledged for ${item.host_name}.`)
-              setTimeout(() => setToastNotification(null), 5000)
-            }
-            onSelectAsset(item.host_name)
-          }}
-          className="chip-btn chip-btn-warning text-xs active:scale-95 transition"
-        >
-          <AlertTriangle className="w-3.5 h-3.5" />
-          <span>Review Evidence</span>
-        </button>
-      )
-    }
-    return (
-      <button
-        onClick={(e) => {
-          e.stopPropagation()
-          if (onApproveSingleAsset) {
-            onApproveSingleAsset(item)
-            setToastNotification(`Asset ${item.host_name} approved and released to patch automation. Signature recorded.`)
-            setTimeout(() => setToastNotification(null), 5000)
-          } else {
-            onSelectAsset(item.host_name)
-          }
-        }}
-        className="chip-btn chip-btn-primary text-xs shadow-xs hover:shadow-md transition active:scale-95"
-        title="Instantly sign cryptographic approval for this verified safe asset"
-      >
-        <CheckCircle2 className="w-3.5 h-3.5" />
-        <span>Approve Patch</span>
-      </button>
-    )
+  const handleExportCsv = () => {
+    window.open(`${BASE_URL}/reports/queue/export.csv?tenant_id=${encodeURIComponent(selectedTenant)}`, '_blank')
   }
 
   return (
-    <div className="flex-1 p-6 space-y-5 max-w-7xl mx-auto w-full font-sans">
-      {/* Informative, Functional & Clickable Glassmorphic KPI Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {/* Card 1: Emergency Clocks */}
-        <div
-          onClick={() => handleKpiClick('emergency')}
-          className={`glass-card p-4.5 rounded-2xl cursor-pointer relative ${kpiFilter === 'emergency'
-              ? 'bg-[#FEE2E2]/40 border-[#DC2626] ring-2 ring-[#DC2626]/20 shadow-md'
-              : 'hover:border-[#BFDBFE]'
-            }`}
-        >
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold text-[#475569]">Emergency 12h Clocks</span>
-            <div className="p-2 rounded-xl bg-[#FEE2E2] text-[#DC2626] shadow-2xs">
-              <Clock className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="text-3xl font-black font-sans tracking-tight text-[#0F172A] mt-2">
-            {emergencyCount}
-          </div>
-          <p className="text-[11px] text-[#475569] mt-1 font-sans">
-            Internet-facing assets facing weaponization
-          </p>
-          {kpiFilter === 'emergency' && (
-            <span className="absolute top-2.5 right-2.5 text-[9px] font-mono font-bold bg-[#DC2626] text-white px-2 py-0.5 rounded-full shadow-2xs">
-              Active Filter
-            </span>
-          )}
-        </div>
-
-        {/* Card 2: Containment Required */}
-        <div
-          onClick={() => handleKpiClick('compromised')}
-          className={`glass-card p-4.5 rounded-2xl cursor-pointer relative ${kpiFilter === 'compromised'
-              ? 'bg-[#FEE2E2]/40 border-[#DC2626] ring-2 ring-[#DC2626]/20 shadow-md'
-              : 'hover:border-[#BFDBFE]'
-            }`}
-        >
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold text-[#475569]">Containment Required</span>
-            <div className="p-2 rounded-xl bg-[#FEE2E2] text-[#DC2626] shadow-2xs">
-              <Lock className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="text-3xl font-black font-sans tracking-tight text-[#DC2626] mt-2">
-            {compCount}
-          </div>
-          <p className="text-[11px] text-[#475569] mt-1 font-sans">
-            Malicious implant or backdoor detected
-          </p>
-          {kpiFilter === 'compromised' && (
-            <span className="absolute top-2.5 right-2.5 text-[9px] font-mono font-bold bg-[#DC2626] text-white px-2 py-0.5 rounded-full shadow-2xs">
-              Active Filter
-            </span>
-          )}
-        </div>
-
-        {/* Card 3: Retention Gaps */}
-        <div
-          onClick={() => handleKpiClick('gaps')}
-          className={`glass-card p-4.5 rounded-2xl cursor-pointer relative ${kpiFilter === 'gaps'
-              ? 'bg-[#EBF2FE] border-[#1D63ED] ring-2 ring-[#1D63ED]/20 shadow-md'
-              : 'hover:border-[#BFDBFE]'
-            }`}
-        >
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold text-[#475569]">Retention Gaps</span>
-            <div className="p-2 rounded-xl bg-[#EBF2FE] text-[#1D63ED] shadow-2xs">
-              <ShieldX className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="text-3xl font-black font-sans tracking-tight text-[#0F172A] mt-2">
-            {gapCount}
-          </div>
-          <p className="text-[11px] text-[#475569] mt-1 font-sans">
-            Under 85% provability across DuckDB lake
-          </p>
-          {kpiFilter === 'gaps' && (
-            <span className="absolute top-2.5 right-2.5 text-[9px] font-mono font-bold bg-[#1D63ED] text-white px-2 py-0.5 rounded-full shadow-2xs">
-              Active Filter
-            </span>
-          )}
-        </div>
-
-        {/* Card 4: Safe to Patch */}
-        <div
-          onClick={() => handleKpiClick('safe')}
-          className={`glass-card p-4.5 rounded-2xl cursor-pointer relative ${kpiFilter === 'safe'
-              ? 'bg-[#D1FAE5]/50 border-[#059669] ring-2 ring-[#059669]/20 shadow-md'
-              : 'hover:border-[#BFDBFE]'
-            }`}
-        >
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold text-[#475569]">Safe to Patch</span>
-            <div className="p-2 rounded-xl bg-[#D1FAE5] text-[#047857] shadow-2xs">
-              <ShieldCheck className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="flex items-baseline gap-2 mt-2">
-            <span className="text-3xl font-black font-sans tracking-tight text-[#047857]">
-              {safeCount}
-            </span>
-            {alreadyApprovedCount > 0 && (
-              <span className="inline-flex items-center gap-1 text-[11px] font-mono font-bold text-[#047857] bg-[#D1FAE5] px-2 py-0.5 rounded-full border border-[#A7F3D0]">
-                <CheckCheck className="w-3.5 h-3.5 text-[#047857]" />
-                <span>{alreadyApprovedCount} Approved</span>
-              </span>
-            )}
-          </div>
-          <p className="text-[11px] text-[#475569] mt-1 font-sans">
-            Zero IOCs across complete 45-day lookback
-          </p>
-          {kpiFilter === 'safe' && (
-            <span className="absolute top-2.5 right-2.5 text-[9px] font-mono font-bold bg-[#059669] text-white px-2 py-0.5 rounded-full shadow-2xs">
-              Active Filter
-            </span>
-          )}
-        </div>
-      </div>
-
-      {/* Toast Notification Banner */}
+    <div className="max-w-7xl mx-auto w-full px-3 sm:px-4 lg:px-6 py-6 space-y-5 font-sans">
+      {/* Toast Notification */}
       {toastNotification && (
-        <div className="p-3.5 rounded-xl bg-[#D1FAE5] border border-[#A7F3D0] text-[#047857] text-xs font-mono flex items-center justify-between shadow-xs animate-in fade-in slide-in-from-top-2 duration-200">
-          <div className="flex items-center gap-2.5">
-            <CheckCheck className="w-4 h-4 text-[#047857] shrink-0" />
-            <span className="font-semibold">{toastNotification}</span>
-          </div>
-          <button
-            onClick={() => setToastNotification(null)}
-            className="text-[#047857]/70 hover:text-[#047857] p-1 text-base font-bold cursor-pointer"
-          >
-            ×
-          </button>
+        <div className="fixed bottom-6 right-6 z-50 bg-[#0F172A] text-white px-4 py-3 rounded-xl shadow-2xl flex items-center gap-3 border border-slate-700 animate-in fade-in slide-in-from-bottom-2 text-xs font-mono">
+          <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+          <span>{toastNotification}</span>
         </div>
       )}
 
-      {/* Main Header & Bulk Action */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pt-1">
+
+      {/* Header and Bulk Action Bar */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-slate-200 dark:border-[#1E2638]">
         <div>
-          <div className="flex items-center gap-2.5">
-            <h1 className="text-2xl font-black tracking-tight text-[#0F172A]">
-              Forensic Decision Queue
+          <div className="flex items-center gap-2">
+            <h1 className="text-xl sm:text-2xl font-black text-[#0F172A] dark:text-white tracking-tight">
+              Evidence-Based Patch Gate
             </h1>
+            <span className="px-2.5 py-0.5 rounded-full bg-neutral-100 dark:bg-[#18181B] text-neutral-800 dark:text-[#E4E4E7] text-xs font-mono font-bold border border-neutral-200 dark:border-[#27272A]">
+              {queue.length} Assets
+            </span>
           </div>
-          <p className="text-xs text-[#475569] mt-0.5 font-sans">
-            Incident response actions per asset: isolate backdoors first, investigate gaps, or release clean assets.
+          <p className="text-xs text-slate-600 dark:text-[#8E8E93] mt-1 max-w-2xl font-sans">
+            Assets with proven non-exploitation proceed to patch release; compromised assets are quarantined to prevent adversary persistence.
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        {/* Global Actions */}
+        <div className="flex items-center gap-2 flex-wrap">
           <button
-            onClick={() => {
-              if (eligibleForBulk > 0) {
-                setShowBulkSafetyModal(true)
-              } else if (alreadyApprovedCount > 0) {
-                setToastNotification(`All ${alreadyApprovedCount} clean assets in the fleet have already been approved and released to patch automation.`)
-                setTimeout(() => setToastNotification(null), 5000)
-              } else {
-                setToastNotification('Zero clean assets currently eligible for bulk approval.')
-                setTimeout(() => setToastNotification(null), 4000)
-              }
-            }}
-            disabled={isBulkApproving}
-            className={`chip-btn ${eligibleForBulk > 0 && !isBulkApproving
-                ? 'chip-btn-primary'
-                : 'bg-[#D1FAE5] text-[#047857] border-[#A7F3D0] hover:bg-[#A7F3D0]/40'
-              } px-4 py-2 text-xs font-mono`}
-            title={
-              eligibleForBulk > 0
-                ? `Bulk approve ${eligibleForBulk} clean assets with 45-day lookback evidence`
-                : `All ${alreadyApprovedCount} clean assets have been approved and released`
-            }
+            onClick={handleExportCsv}
+            className="px-3 py-2 rounded-xl border border-slate-200 dark:border-[#27272A] bg-white dark:bg-[#18181B] hover:bg-slate-50 dark:hover:bg-[#222225] text-slate-700 dark:text-[#E4E4E7] text-xs font-semibold flex items-center gap-1.5 transition shadow-xs cursor-pointer"
+            title="Download Decision Queue as CSV"
           >
-            <CheckCheck className={`w-4 h-4 ${eligibleForBulk > 0 ? 'text-white' : 'text-[#047857]'}`} />
-            <span>
-              {isBulkApproving
-                ? 'Signing Approval...'
-                : eligibleForBulk > 0
-                  ? `Bulk Approve Clean (${eligibleForBulk})`
-                  : `All Clean Released (${alreadyApprovedCount})`}
-            </span>
+            <Download className="w-3.5 h-3.5" />
+            <span>Export CSV</span>
           </button>
+
+          {/* Bulk Approve button strictly gated by role */}
+          {canApprove ? (
+            <button
+              onClick={() => setShowBulkSafetyModal(true)}
+              disabled={isBulkApproving || eligibleForBulk === 0}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 shadow-sm cursor-pointer ${
+                eligibleForBulk > 0
+                  ? 'bg-[#1D63ED] hover:bg-[#154EC2] text-white shadow-blue-500/25'
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed border border-slate-200 dark:border-slate-700'
+              }`}
+            >
+              <CheckCheck className="w-4 h-4" />
+              <span>
+                {isBulkApproving
+                  ? 'Signing Approval...'
+                  : eligibleForBulk > 0
+                    ? `Bulk Approve Clean (${eligibleForBulk})`
+                    : `All Clean Released (${alreadyApprovedCount})`}
+              </span>
+            </button>
+          ) : (
+            <button
+              disabled
+              className="px-4 py-2 rounded-xl text-xs font-mono font-bold bg-slate-100 dark:bg-slate-900 text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-slate-800 cursor-not-allowed flex items-center gap-1.5"
+              title="Bulk releasing clean assets requires Approver or Admin role"
+            >
+              <Lock className="w-3.5 h-3.5" />
+              <span>Bulk Release (Approvers Only)</span>
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Filter Toolbar (Glassmorphic) */}
-      <div className="glass-card p-3 rounded-2xl flex flex-wrap items-center justify-between gap-3 text-xs">
-        <div className="flex items-center gap-2 flex-1 min-w-[260px]">
-          <Search className="w-4 h-4 text-[#64748B] ml-1.5" />
+      {/* KPI Saved View Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <div
+          onClick={() => { setSavedView(savedView === 'emergency' ? 'all' : 'emergency'); setCurrentPage(1); }}
+          className={`p-4 rounded-2xl cursor-pointer border transition ${
+            savedView === 'emergency'
+              ? 'bg-rose-50/80 dark:bg-[#1C1415] border-rose-500 dark:border-[#4A2024] ring-2 ring-rose-500/20'
+              : 'bg-white dark:bg-[#121214] border-slate-200 dark:border-[#222225] hover:border-slate-300 dark:hover:border-[#333338]'
+          }`}
+        >
+          <div className="flex items-center justify-between text-xs font-semibold text-slate-600 dark:text-[#A1A1AA]">
+            <span>Emergency 12h Clocks</span>
+            <Clock className="w-4 h-4 text-rose-500" />
+          </div>
+          <div className="text-2xl sm:text-3xl font-black text-rose-500 dark:text-[#F87171] mt-2 font-mono">{emergencyCount}</div>
+          <div className="text-[11px] text-slate-500 dark:text-[#71717A] mt-0.5">Critical internet exposure</div>
+        </div>
+
+        <div
+          onClick={() => { setSavedView(savedView === 'compromised' ? 'all' : 'compromised'); setCurrentPage(1); }}
+          className={`p-4 rounded-2xl cursor-pointer border transition ${
+            savedView === 'compromised'
+              ? 'bg-rose-50/80 dark:bg-[#1C1415] border-rose-500 dark:border-[#4A2024] ring-2 ring-rose-500/20'
+              : 'bg-white dark:bg-[#121214] border-slate-200 dark:border-[#222225] hover:border-slate-300 dark:hover:border-[#333338]'
+          }`}
+        >
+          <div className="flex items-center justify-between text-xs font-semibold text-slate-600 dark:text-[#A1A1AA]">
+            <span>Blocked / Compromised</span>
+            <Lock className="w-4 h-4 text-rose-500" />
+          </div>
+          <div className="text-2xl sm:text-3xl font-black text-rose-500 dark:text-[#F87171] mt-2 font-mono">{compCount}</div>
+          <div className="text-[11px] text-slate-500 dark:text-[#71717A] mt-0.5">Quarantine &amp; triage required</div>
+        </div>
+
+        <div
+          onClick={() => { setSavedView(savedView === 'gaps' ? 'all' : 'gaps'); setCurrentPage(1); }}
+          className={`p-4 rounded-2xl cursor-pointer border transition ${
+            savedView === 'gaps'
+              ? 'bg-slate-100 dark:bg-[#1C1C20] border-slate-400 dark:border-[#52525B] ring-2 ring-slate-400/20'
+              : 'bg-white dark:bg-[#121214] border-slate-200 dark:border-[#222225] hover:border-slate-300 dark:hover:border-[#333338]'
+          }`}
+        >
+          <div className="flex items-center justify-between text-xs font-semibold text-slate-600 dark:text-[#A1A1AA]">
+            <span>Retention Blindspots</span>
+            <ShieldX className="w-4 h-4 text-slate-400" />
+          </div>
+          <div className="text-2xl sm:text-3xl font-black text-slate-700 dark:text-[#FFFFFF] mt-2 font-mono">{gapCount}</div>
+          <div className="text-[11px] text-slate-500 dark:text-[#71717A] mt-0.5">&lt; 85% forensic provability</div>
+        </div>
+
+        <div
+          onClick={() => { setSavedView(savedView === 'safe' ? 'all' : 'safe'); setCurrentPage(1); }}
+          className={`p-4 rounded-2xl cursor-pointer border transition ${
+            savedView === 'safe'
+              ? 'bg-emerald-50/80 dark:bg-[#141C16] border-emerald-500 dark:border-[#204A2D] ring-2 ring-emerald-500/20'
+              : 'bg-white dark:bg-[#121214] border-slate-200 dark:border-[#222225] hover:border-slate-300 dark:hover:border-[#333338]'
+          }`}
+        >
+          <div className="flex items-center justify-between text-xs font-semibold text-slate-600 dark:text-[#A1A1AA]">
+            <span>Safe to Patch</span>
+            <ShieldCheck className="w-4 h-4 text-emerald-500" />
+          </div>
+          <div className="text-2xl sm:text-3xl font-black text-emerald-600 dark:text-[#4ADE80] mt-2 font-mono">{safeCount}</div>
+          <div className="text-[11px] text-slate-500 dark:text-[#71717A] mt-0.5">{alreadyApprovedCount} already released</div>
+        </div>
+      </div>
+
+      {/* Filter and Search Bar */}
+      <div className="p-3 rounded-2xl bg-white dark:bg-[#121214] border border-slate-200 dark:border-[#222225] shadow-xs flex flex-wrap items-center justify-between gap-3 text-xs">
+        <div className="flex items-center gap-2 flex-1 min-w-[240px]">
+          <Search className="w-4 h-4 text-slate-400 dark:text-[#71717A] ml-1.5" />
           <input
             type="text"
-            placeholder="Search host, asset ID, IP address or owner..."
+            placeholder="Search host, asset ID, IP or owner..."
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="bg-white/90 border border-[#E2E8F0] rounded-full px-3.5 py-1.5 text-xs text-[#0F172A] placeholder-[#64748B] focus:outline-none focus:border-[#1D63ED] flex-1 font-mono shadow-2xs"
+            onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+            className="w-full bg-slate-50 dark:bg-[#18181B] border border-slate-200 dark:border-[#27272A] rounded-xl px-3 py-1.5 text-xs text-[#0F172A] dark:text-white placeholder-slate-400 dark:placeholder-[#71717A] focus:outline-none focus:ring-1 focus:ring-white font-mono"
           />
         </div>
 
-        <div className="flex items-center gap-3 flex-wrap">
-          {/* Custom Glassmorphic Verdict Dropdown */}
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Verdict Filter */}
           <div className="relative">
             <button
-              type="button"
-              onClick={() => {
-                setIsVerdictDropdownOpen(!isVerdictDropdownOpen)
-                setIsTierDropdownOpen(false)
-              }}
-              className="chip-btn chip-btn-secondary px-3 py-1.5 flex items-center gap-2 rounded-full border border-[#E2E8F0] bg-white/90 hover:bg-[#EBF2FE]/60 text-xs font-medium text-[#0F172A] shadow-2xs transition-all"
+              onClick={() => { setIsVerdictDropdownOpen(!isVerdictDropdownOpen); setIsTierDropdownOpen(false); }}
+              className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-[#27272A] bg-slate-50 dark:bg-[#18181B] hover:bg-slate-100 dark:hover:bg-[#222225] text-xs font-semibold flex items-center gap-1.5 cursor-pointer text-[#0F172A] dark:text-white"
             >
-              <span className="text-[#64748B] text-[11px] font-medium">Verdict:</span>
+              <span className="text-slate-500 dark:text-[#8E8E93]">Verdict:</span>
               <span className={`w-2 h-2 rounded-full ${currentVerdict.dot}`} />
-              <span className="font-semibold text-[#0F172A]">{currentVerdict.label}</span>
-              <ChevronDown
-                className={`w-3.5 h-3.5 text-[#64748B] transition-transform duration-200 ${
-                  isVerdictDropdownOpen ? 'rotate-180' : ''
-                }`}
-              />
+              <span>{currentVerdict.label}</span>
+              <ChevronDown className="w-3.5 h-3.5 text-slate-400 dark:text-[#71717A]" />
             </button>
 
             {isVerdictDropdownOpen && (
               <>
-                <div
-                  className="fixed inset-0 z-40"
-                  onClick={() => setIsVerdictDropdownOpen(false)}
-                />
-                <div className="absolute right-0 top-full mt-2 w-64 bg-white/95 backdrop-blur-xl border border-[#E1E9F2] rounded-2xl shadow-[0_20px_50px_rgba(15,23,42,0.15)] p-2 z-50 animate-in fade-in zoom-in-95 duration-100">
-                  <div className="px-2.5 py-1.5 border-b border-[#E1E9F2]/80 mb-1 text-[10px] font-bold tracking-wider text-[#64748B] uppercase">
-                    Forensic Verdict Filter
-                  </div>
-                  <div className="space-y-1">
-                    {verdictOptions.map((opt) => {
-                      const isSelected = verdictFilter === opt.value
-                      return (
-                        <div
-                          key={opt.value}
-                          onClick={() => {
-                            setVerdictFilter(opt.value)
-                            setIsVerdictDropdownOpen(false)
-                          }}
-                          className={`p-2 rounded-xl cursor-pointer transition flex items-center justify-between border ${
-                            isSelected
-                              ? 'bg-[#EBF2FE] border-[#1D63ED] shadow-2xs font-semibold'
-                              : 'bg-transparent hover:bg-white/70 border-transparent'
-                          }`}
-                        >
-                          <div className="flex items-center gap-2 min-w-0 pr-2">
-                            <span className={`w-2 h-2 rounded-full shrink-0 ${opt.dot}`} />
-                            <div className="min-w-0">
-                              <div className="text-xs font-semibold text-[#0F172A] truncate">
-                                {opt.label}
-                              </div>
-                              <div className="text-[10px] text-[#64748B] truncate">
-                                {opt.desc}
-                              </div>
-                            </div>
-                          </div>
-
-                          <div className="flex items-center gap-1.5 shrink-0">
-                            {opt.badge && (
-                              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-[#F4F7FC] text-[#475569] border border-[#E1E9F2]">
-                                {opt.badge}
-                              </span>
-                            )}
-                            {isSelected && <Check className="w-3.5 h-3.5 text-[#1D63ED]" />}
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </div>
+                <div className="fixed inset-0 z-40" onClick={() => setIsVerdictDropdownOpen(false)} />
+                <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-[#121214] border border-slate-200 dark:border-[#26262B] rounded-2xl shadow-2xl p-2 z-50 animate-in fade-in">
+                  {verdictOptions.map((opt) => (
+                    <div
+                      key={opt.value}
+                      onClick={() => { setVerdictFilter(opt.value); setIsVerdictDropdownOpen(false); setCurrentPage(1); }}
+                      className={`p-2 rounded-xl cursor-pointer text-xs flex items-center justify-between ${
+                        verdictFilter === opt.value ? 'bg-slate-100 dark:bg-[#1E1E22] text-[#0F172A] dark:text-white font-bold' : 'hover:bg-slate-50 dark:hover:bg-[#18181B] text-[#0F172A] dark:text-[#A1A1AA]'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className={`w-2 h-2 rounded-full ${opt.dot}`} />
+                        <span>{opt.label}</span>
+                      </div>
+                      {verdictFilter === opt.value && <Check className="w-3.5 h-3.5" />}
+                    </div>
+                  ))}
                 </div>
               </>
             )}
           </div>
 
-          {/* Custom Glassmorphic Exposure Tier Dropdown */}
+          {/* Tier Filter */}
           <div className="relative">
             <button
-              type="button"
-              onClick={() => {
-                setIsTierDropdownOpen(!isTierDropdownOpen)
-                setIsVerdictDropdownOpen(false)
-              }}
-              className="chip-btn chip-btn-secondary px-3 py-1.5 flex items-center gap-2 rounded-full border border-[#E2E8F0] bg-white/90 hover:bg-[#EBF2FE]/60 text-xs font-medium text-[#0F172A] shadow-2xs transition-all"
+              onClick={() => { setIsTierDropdownOpen(!isTierDropdownOpen); setIsVerdictDropdownOpen(false); }}
+              className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-[#27272A] bg-slate-50 dark:bg-[#18181B] hover:bg-slate-100 dark:hover:bg-[#222225] text-xs font-semibold flex items-center gap-1.5 cursor-pointer text-[#0F172A] dark:text-white"
             >
-              <span className="text-[#64748B] text-[11px] font-medium">Tier:</span>
-              <span className={`w-2 h-2 rounded-full ${currentTier.dot}`} />
-              <span className="font-semibold text-[#0F172A]">{currentTier.label}</span>
-              <ChevronDown
-                className={`w-3.5 h-3.5 text-[#64748B] transition-transform duration-200 ${
-                  isTierDropdownOpen ? 'rotate-180' : ''
-                }`}
-              />
+              <span className="text-slate-500 dark:text-[#8E8E93]">Tier:</span>
+              <span>{currentTier.label}</span>
+              <ChevronDown className="w-3.5 h-3.5 text-slate-400 dark:text-[#71717A]" />
             </button>
 
             {isTierDropdownOpen && (
               <>
-                <div
-                  className="fixed inset-0 z-40"
-                  onClick={() => setIsTierDropdownOpen(false)}
-                />
-                <div className="absolute right-0 top-full mt-2 w-60 bg-white/95 backdrop-blur-xl border border-[#E1E9F2] rounded-2xl shadow-[0_20px_50px_rgba(15,23,42,0.15)] p-2 z-50 animate-in fade-in zoom-in-95 duration-100">
-                  <div className="px-2.5 py-1.5 border-b border-[#E1E9F2]/80 mb-1 text-[10px] font-bold tracking-wider text-[#64748B] uppercase">
-                    Exposure SLA Filter
-                  </div>
-                  <div className="space-y-1">
-                    {tierOptions.map((opt) => {
-                      const isSelected = tierFilter === opt.value
-                      return (
-                        <div
-                          key={opt.value}
-                          onClick={() => {
-                            setTierFilter(opt.value)
-                            setIsTierDropdownOpen(false)
-                          }}
-                          className={`p-2 rounded-xl cursor-pointer transition flex items-center justify-between border ${
-                            isSelected
-                              ? 'bg-[#EBF2FE] border-[#1D63ED] shadow-2xs font-semibold'
-                              : 'bg-transparent hover:bg-white/70 border-transparent'
-                          }`}
-                        >
-                          <div className="flex items-center gap-2 min-w-0 pr-2">
-                            <span className={`w-2 h-2 rounded-full shrink-0 ${opt.dot}`} />
-                            <div className="min-w-0">
-                              <div className="text-xs font-semibold text-[#0F172A] truncate">
-                                {opt.label}
-                              </div>
-                              <div className="text-[10px] text-[#64748B] truncate">
-                                {opt.desc}
-                              </div>
-                            </div>
-                          </div>
-
-                          <div className="flex items-center gap-1.5 shrink-0">
-                            {opt.badge && (
-                              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-[#F4F7FC] text-[#475569] border border-[#E1E9F2]">
-                                {opt.badge}
-                              </span>
-                            )}
-                            {isSelected && <Check className="w-3.5 h-3.5 text-[#1D63ED]" />}
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </div>
+                <div className="fixed inset-0 z-40" onClick={() => setIsTierDropdownOpen(false)} />
+                <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-[#121214] border border-slate-200 dark:border-[#26262B] rounded-2xl shadow-2xl p-2 z-50 animate-in fade-in">
+                  {tierOptions.map((opt) => (
+                    <div
+                      key={opt.value}
+                      onClick={() => { setTierFilter(opt.value); setIsTierDropdownOpen(false); setCurrentPage(1); }}
+                      className={`p-2 rounded-xl cursor-pointer text-xs flex items-center justify-between ${
+                        tierFilter === opt.value ? 'bg-slate-100 dark:bg-[#1E1E22] text-[#0F172A] dark:text-white font-bold' : 'hover:bg-slate-50 dark:hover:bg-[#18181B] text-[#0F172A] dark:text-[#A1A1AA]'
+                      }`}
+                    >
+                      <span>{opt.label}</span>
+                      {tierFilter === opt.value && <Check className="w-3.5 h-3.5" />}
+                    </div>
+                  ))}
                 </div>
               </>
             )}
           </div>
 
-          <span className="text-[#475569] text-[11px] pl-2 border-l border-[#E2E8F0]">
-            Filtered: <strong className="text-[#0F172A] font-mono">{filteredQueue.length}</strong> of {queue.length}
+          <span className="text-slate-500 dark:text-[#71717A] font-mono text-[11px] pl-2 border-l border-slate-200 dark:border-[#26262B] hidden sm:inline">
+            Showing <strong className="text-slate-900 dark:text-white">{filteredQueue.length}</strong> of {queue.length}
           </span>
         </div>
       </div>
 
-      {/* High-Clarity Forensic Table (Streamlined 4 Columns - Zero Horizontal Scroll) */}
-      <div className="glass-card rounded-2xl overflow-hidden border border-white/80 shadow-[0_12px_36px_rgba(15,23,42,0.04)]">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs border-collapse">
-            <thead className="glass-table-header border-b border-[#E2E8F0] text-[11px] uppercase font-bold tracking-wider">
+      {/* MOBILE COLLAPSED CARDS VIEW (Tested at 375px) */}
+      <div className="block md:hidden space-y-3">
+        {isLoading ? (
+          <div className="p-8 text-center text-slate-500 font-mono text-xs">Loading decision queue...</div>
+        ) : paginatedQueue.length === 0 ? (
+          <div className="p-8 text-center text-slate-500 font-mono text-xs">No assets match filter criteria.</div>
+        ) : (
+          paginatedQueue.map((item) => (
+            <div
+              key={item.asset_id}
+              onClick={() => onSelectAsset(item.host_name)}
+              className="p-4 rounded-2xl bg-white dark:bg-[#121214] border border-slate-200 dark:border-[#222225] shadow-xs space-y-3 cursor-pointer hover:border-slate-400 dark:hover:border-[#52525B] transition"
+            >
+              {/* Visual Hierarchy: Patch-Gate Verdict FIRST */}
+              <div className="flex items-center justify-between gap-2">
+                <div>{getVerdictBadge(item, true)}</div>
+                <div className="text-right">{getTierChip(item.exposure_tier)}</div>
+              </div>
+
+              {/* Host & Metadata */}
+              <div className="space-y-1">
+                <div className="text-sm font-bold text-[#0F172A] dark:text-white font-mono flex items-center justify-between">
+                  <span>{item.host_name}</span>
+                  {item.is_approved && <span className="text-xs text-emerald-600 dark:text-[#4ADE80] font-bold">✓ Approved</span>}
+                </div>
+                <div className="text-xs text-slate-500 dark:text-[#8E8E93] font-mono truncate">
+                  {item.ip_address || '10.0.12.4'} · {item.owner} · {item.tenant_id}
+                </div>
+              </div>
+
+              {/* Action Buttons based on role */}
+              <div className="pt-2 border-t border-slate-100 dark:border-[#222225] flex items-center justify-between">
+                <div className="text-[11px] font-mono text-rose-600 dark:text-[#F87171] font-bold flex items-center gap-1">
+                  <Clock className="w-3 h-3" />
+                  <span>{formatSeconds(item.seconds_remaining)}</span>
+                </div>
+
+                <div>
+                  {item.is_approved ? (
+                    <span className="text-xs font-bold text-emerald-600 dark:text-[#4ADE80]">✓ Released</span>
+                  ) : item.verdict_state === 'Likely compromised' ? (
+                    canContain ? (
+                      <span className="text-xs font-bold text-rose-600 dark:text-[#F87171]">Quarantine Required</span>
+                    ) : (
+                      <span className="text-xs text-slate-400 dark:text-[#71717A]">Read-Only</span>
+                    )
+                  ) : canApprove ? (
+                    <span className="text-xs font-bold text-emerald-600 dark:text-[#4ADE80]">Release Ready</span>
+                  ) : (
+                    <span className="text-xs text-slate-400 dark:text-[#71717A]">Approval Locked</span>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* DESKTOP HIGH-CLARITY FORENSIC TABLE */}
+      <div className="hidden md:block bg-white dark:bg-[#121214] rounded-2xl overflow-hidden border border-slate-200 dark:border-[#222225] shadow-xs">
+        <table className="w-full text-left text-xs border-collapse">
+          <thead className="bg-slate-50 dark:bg-[#18181B] border-b border-slate-200 dark:border-[#222225] text-[11px] uppercase font-bold text-slate-600 dark:text-[#A1A1AA] tracking-wider">
+            <tr>
+              <th className="py-3 px-3 w-10 text-center">
+                <input
+                  type="checkbox"
+                  checked={paginatedQueue.length > 0 && paginatedQueue.every((i) => selectedAssetIds.has(i.asset_id))}
+                  onChange={toggleSelectAllPage}
+                  className="rounded border-slate-300 dark:border-[#3F3F46]"
+                />
+              </th>
+              {/* Visual Hierarchy: Verdict FIRST column */}
+              <th className="py-3 px-4 w-[26%]">Patch Gate Verdict</th>
+              <th className="py-3 px-4 w-[34%]">Asset &amp; Infrastructure</th>
+              <th className="py-3 px-4 w-[22%]">SLA Clock &amp; Provability</th>
+              <th className="py-3 px-4 w-[18%] text-right">Required Action</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100 dark:divide-[#222225]">
+            {isLoading ? (
               <tr>
-                <th className="py-3 px-4 w-[34%]">Asset & Organisation</th>
-                <th className="py-3 px-4 w-[24%]">Response Deadline</th>
-                <th className="py-3 px-4 w-[24%]">Forensic Verdict & Retention</th>
-                <th className="py-3 px-4 w-[18%] text-right">Required Action</th>
+                <td colSpan={5} className="py-12 text-center text-slate-400 dark:text-[#71717A] font-mono">
+                  Loading asset decision queue...
+                </td>
               </tr>
-            </thead>
-            <tbody className="divide-y divide-[#E2E8F0]">
-              {isLoading ? (
-                <tr>
-                  <td colSpan={4} className="py-14 text-center text-[#64748B] font-mono">
-                    <div className="flex items-center justify-center gap-2">
-                      <div className="w-4 h-4 border-2 border-[#1D63ED] border-t-transparent rounded-full animate-spin" />
-                      Loading asset decision queue...
+            ) : paginatedQueue.length === 0 ? (
+              <tr>
+                <td colSpan={5} className="py-12 text-center text-slate-400 dark:text-[#71717A] font-mono">
+                  No assets match current criteria.
+                </td>
+              </tr>
+            ) : (
+              paginatedQueue.map((item) => (
+                <tr
+                  key={item.asset_id}
+                  onClick={() => onSelectAsset(item.host_name)}
+                  className="cursor-pointer hover:bg-slate-50/80 dark:hover:bg-[#18181B] transition"
+                >
+                  <td className="py-3 px-3 text-center" onClick={(e) => e.stopPropagation()}>
+                    <input
+                      type="checkbox"
+                      checked={selectedAssetIds.has(item.asset_id)}
+                      onChange={() => toggleSelectAsset(item.asset_id)}
+                      className="rounded border-slate-300 dark:border-[#3F3F46]"
+                    />
+                  </td>
+
+                  {/* Verdict First */}
+                  <td className="py-3 px-4">
+                    <div className="flex items-center gap-2">
+                      {getVerdictBadge(item)}
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setSelectedVerdictItem(item); }}
+                        className="text-slate-400 hover:text-slate-200 transition"
+                        title="Explain Verdict"
+                      >
+                        <HelpCircle className="w-3.5 h-3.5" />
+                      </button>
                     </div>
                   </td>
-                </tr>
-              ) : filteredQueue.length === 0 ? (
-                <tr>
-                  <td colSpan={4} className="py-14 text-center text-[#64748B] font-mono">
-                    Zero items matching current criteria.
+
+                  {/* Host & Metadata */}
+                  <td className="py-3 px-4">
+                    <div className="font-bold text-[#0F172A] dark:text-white font-mono flex items-center gap-2">
+                      <span>{item.host_name}</span>
+                      {item.is_approved && <span className="text-[10px] text-emerald-600 dark:text-[#4ADE80] bg-emerald-50 dark:bg-[#121915] border border-transparent dark:border-[#1E3B29] px-1.5 py-0.2 rounded font-bold">RELEASED</span>}
+                      {item.is_contained && <span className="text-[10px] text-amber-600 dark:text-[#FBBF24] bg-amber-50 dark:bg-[#1A1713] border border-transparent dark:border-[#3D3219] px-1.5 py-0.2 rounded font-bold">CONTAINED</span>}
+                    </div>
+                    <div className="text-[11px] text-slate-500 dark:text-[#8E8E93] font-mono mt-0.5">
+                      {item.asset_id} · {item.owner} · <span className="capitalize">{item.tenant_id}</span>
+                    </div>
+                  </td>
+
+                  {/* SLA Clock & Provability */}
+                  <td className="py-3 px-4 font-mono">
+                    <div className="flex items-center gap-1.5 font-bold text-xs text-slate-800 dark:text-slate-200" role="region" aria-live="polite">
+                      <Clock className="w-3.5 h-3.5 text-rose-500" />
+                      <span>{formatSeconds(item.seconds_remaining)}</span>
+                      {getTierChip(item.exposure_tier)}
+                    </div>
+                    <div className="text-[11px] text-emerald-600 dark:text-emerald-400 mt-1">
+                      {Math.round(item.coverage_score * 100)}% 45d Lookback Provable
+                    </div>
+                  </td>
+
+                  {/* Required Action based on role permissions */}
+                  <td className="py-3 px-4 text-right">
+                    {item.is_approved ? (
+                      <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 inline-flex items-center gap-1">
+                        <CheckCheck className="w-4 h-4" />
+                        <span>Released</span>
+                      </span>
+                    ) : item.is_contained ? (
+                      <span className="text-xs font-bold text-amber-600 dark:text-amber-400 inline-flex items-center gap-1">
+                        <ShieldCheck className="w-4 h-4" />
+                        <span>Quarantined</span>
+                      </span>
+                    ) : item.verdict_state === 'Likely compromised' ? (
+                      canContain ? (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            if (onContainAsset) {
+                              onContainAsset(item)
+                              setToastNotification(`Host ${item.host_name} quarantined to isolated VLAN. Egress blocked.`)
+                              setTimeout(() => setToastNotification(null), 4000)
+                            }
+                          }}
+                          className="px-3 py-1 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold transition shadow-xs cursor-pointer"
+                        >
+                          Quarantine VLAN
+                        </button>
+                      ) : (
+                        <span className="text-[11px] font-mono text-slate-400 dark:text-slate-500">
+                          Quarantine Required
+                        </span>
+                      )
+                    ) : canApprove ? (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          if (onApproveSingleAsset) {
+                            onApproveSingleAsset(item)
+                            setToastNotification(`Host ${item.host_name} approved and released to production patching.`)
+                            setTimeout(() => setToastNotification(null), 4000)
+                          }
+                        }}
+                        className="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition shadow-xs cursor-pointer"
+                      >
+                        Approve Release
+                      </button>
+                    ) : isReadOnly ? (
+                      <span className="text-[11px] font-mono text-slate-400 dark:text-slate-500">
+                        Audit Clean (Read-Only)
+                      </span>
+                    ) : (
+                      <span
+                        className="text-[11px] font-mono text-slate-400 dark:text-slate-500 inline-flex items-center gap-1 cursor-not-allowed"
+                        title="Release approval requires Approver role"
+                      >
+                        <Lock className="w-3 h-3 text-slate-400" />
+                        <span>Approver Role Required</span>
+                      </span>
+                    )}
                   </td>
                 </tr>
-              ) : (
-                filteredQueue.map((item) => {
-                  const isComp = item.verdict_state === 'Likely compromised'
-                  const isEmergency = item.exposure_tier === 'emergency'
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
 
-                  return (
-                    <tr
-                      key={item.asset_id}
-                      onClick={() => onSelectAsset(item.host_name)}
-                      className={`cursor-pointer transition hover:bg-[#EBF2FE]/40 group relative ${isComp ? 'bg-[#FEE2E2]/20' : ''
-                        }`}
-                    >
-                      {/* Asset & Organisation */}
-                      <td className="py-3.5 px-4">
-                        <div className="flex items-center gap-3">
-                          <div className={`w-1 h-10 rounded-full shrink-0 ${
-                            item.is_approved ? 'bg-[#059669]' :
-                            item.is_contained ? 'bg-[#D97706]' :
-                            isComp ? 'bg-[#DC2626]' :
-                            item.verdict_state === 'Cannot verify' ? 'bg-[#1D63ED]' : 'bg-[#059669]'
-                          }`} />
-                          <div className="min-w-0">
-                            <div className="font-bold text-[#0F172A] font-mono text-[13px] flex items-center gap-2 group-hover:text-[#1D63ED] transition truncate">
-                              <span className="truncate">{item.host_name}</span>
-                              {item.is_approved && (
-                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[#D1FAE5] text-[#047857] border border-[#A7F3D0] shadow-2xs shrink-0 animate-in fade-in duration-150">
-                                  <CheckCheck className="w-3 h-3 text-[#047857]" />
-                                  <span>Approved</span>
-                                </span>
-                              )}
-                              {item.is_contained && (
-                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[#FEF3C7] text-[#B45309] border border-[#FDE68A] shadow-2xs shrink-0 animate-in fade-in duration-150">
-                                  <ShieldCheck className="w-3 h-3 text-[#B45309]" />
-                                  <span>Contained</span>
-                                </span>
-                              )}
-                              {item.is_audited && (
-                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[#E6EEF7] text-[#1D63ED] border border-[#BFDBFE] shadow-2xs shrink-0 animate-in fade-in duration-150">
-                                  <Check className="w-3 h-3 text-[#1D63ED]" />
-                                  <span>Audited</span>
-                                </span>
-                              )}
-                              {item.is_reviewed && (
-                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[#FEF3C7] text-[#B45309] border border-[#FDE68A] shadow-2xs shrink-0 animate-in fade-in duration-150">
-                                  <Check className="w-3 h-3 text-[#B45309]" />
-                                  <span>Reviewed</span>
-                                </span>
-                              )}
-                              {item.status === 'needs_inventory' && (
-                                <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-[#FEF3C7] text-[#B45309] font-mono font-bold shrink-0">
-                                  Unknown Version
-                                </span>
-                              )}
-                              {item.status === 'reopened' && (
-                                <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-[#FEE2E2] text-[#DC2626] font-mono font-bold shrink-0 animate-pulse">
-                                  Reopened Post-Patch
-                                </span>
-                              )}
-                            </div>
-                            <div className="text-[11px] text-[#475569] font-sans truncate mt-0.5">
-                              <strong className="capitalize text-[#0F172A] font-semibold">{item.tenant_id.replace('-', ' ')}</strong>
-                              <span className="mx-1 text-[#CBD5E1]">•</span>
-                              <span>{item.asset_id}</span>
-                              <span className="mx-1 text-[#CBD5E1]">•</span>
-                              <span>{item.owner}</span>
-                            </div>
-                          </div>
-                        </div>
-                      </td>
+      {/* Pagination Controls */}
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs font-mono text-slate-500 dark:text-slate-400 pt-2 border-t border-slate-200 dark:border-slate-800">
+        <div className="flex items-center gap-2">
+          <span>Items per page:</span>
+          <select
+            value={pageSize}
+            onChange={(e) => { setPageSize(Number(e.target.value)); setCurrentPage(1); }}
+            className="bg-white dark:bg-black border border-slate-200 dark:border-slate-800 text-[#0F172A] dark:text-white rounded-lg px-2 py-1 text-xs"
+          >
+            <option value={5}>5</option>
+            <option value={8}>8</option>
+            <option value={15}>15</option>
+            <option value={30}>30</option>
+          </select>
+          <span className="ml-2">
+            Page {currentPage} of {totalPages} ({totalItems} items)
+          </span>
+        </div>
 
-                      {/* Response SLA & Deadline */}
-                      <td className="py-3.5 px-4 font-mono">
-                        <div className={`flex items-center gap-1.5 font-bold text-xs ${item.is_breached
-                            ? 'text-[#DC2626]'
-                            : isEmergency
-                              ? 'text-[#DC2626]'
-                              : 'text-[#0F172A]'
-                          }`}>
-                          <Clock className={`w-3.5 h-3.5 ${isEmergency ? 'text-[#DC2626] animate-pulse' : 'text-[#64748B]'}`} />
-                          <span>{formatSeconds(item.seconds_remaining)}</span>
-                        </div>
-                        <div className="mt-1 flex items-center gap-1.5 font-sans">
-                          {getTierChip(item.exposure_tier)}
-                        </div>
-                      </td>
-
-                      {/* Forensic Verdict & Retention */}
-                      <td className="py-3.5 px-4 font-mono">
-                        <div>
-                          {getVerdictPill(item)}
-                        </div>
-                        <div className="text-[11px] text-[#475569] mt-1 flex items-center gap-1.5 font-sans">
-                          <span className={`w-1.5 h-1.5 rounded-full ${item.coverage_score >= 0.85 ? 'bg-[#059669]' : 'bg-[#1D63ED]'
-                            }`} />
-                          <span>
-                            {item.coverage_score >= 0.85 ? (
-                              <span className="text-[#059669] font-semibold">45d Lookback Provable ({Math.round(item.coverage_score * 100)}%)</span>
-                            ) : (
-                              <span className="text-[#1D63ED] font-semibold">Retention Blind Spot ({Math.round(item.coverage_score * 100)}%)</span>
-                            )}
-                          </span>
-                        </div>
-                      </td>
-
-                      {/* Action */}
-                      <td className="py-3.5 px-4 text-right">
-                        {renderContextualButton(item)}
-                      </td>
-                    </tr>
-                  )
-                })
-              )}
-            </tbody>
-          </table>
+        <div className="flex items-center gap-1.5">
+          <button
+            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+            disabled={currentPage === 1}
+            className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-800 disabled:opacity-30 hover:bg-slate-100 dark:hover:bg-slate-900 cursor-pointer text-[#0F172A] dark:text-white"
+            aria-label="Previous Page"
+          >
+            <ArrowLeft className="w-4 h-4" />
+          </button>
+          {Array.from({ length: totalPages }).map((_, idx) => (
+            <button
+              key={idx + 1}
+              onClick={() => setCurrentPage(idx + 1)}
+              className={`w-7 h-7 rounded-lg text-xs font-bold transition ${
+                currentPage === idx + 1
+                  ? 'bg-[#1D63ED] text-white shadow-xs'
+                  : 'border border-slate-200 dark:border-slate-800 text-[#0F172A] dark:text-white hover:bg-slate-100 dark:hover:bg-slate-900'
+              }`}
+            >
+              {idx + 1}
+            </button>
+          ))}
+          <button
+            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+            disabled={currentPage === totalPages}
+            className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-800 disabled:opacity-30 hover:bg-slate-100 dark:hover:bg-slate-900 cursor-pointer text-[#0F172A] dark:text-white"
+            aria-label="Next Page"
+          >
+            <ArrowRight className="w-4 h-4" />
+          </button>
         </div>
       </div>
 
@@ -861,7 +731,7 @@ export const DecisionQueueView: React.FC<DecisionQueueViewProps> = ({
           queue={queue}
           onConfirm={() => {
             setShowBulkSafetyModal(false)
-            setToastNotification(`Successfully approved and released clean assets to automated patch automation. Ed25519 signature committed to ledger.`)
+            setToastNotification('Successfully approved and released clean assets. Ed25519 signature committed to ledger.')
             setTimeout(() => setToastNotification(null), 5000)
             onBulkApprove()
           }}
@@ -872,3 +742,4 @@ export const DecisionQueueView: React.FC<DecisionQueueViewProps> = ({
     </div>
   )
 }
+export default DecisionQueueView

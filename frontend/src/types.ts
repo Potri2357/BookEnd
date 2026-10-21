@@ -203,6 +203,7 @@ export interface QueueItem {
   host_name: string
   tenant_id: string
   owner: string
+  ip_address?: string
   exposure_tier: 'emergency' | 'high' | 'standard'
   verdict_state: string
   confidence: string
@@ -280,4 +281,73 @@ export interface ProofPack {
   playbook?: Playbook
   audit_events: AuditRecord[]
 }
+
+export interface UserPrincipal {
+  user_id: string
+  name: string
+  email: string
+  role: 'admin' | 'approver' | 'analyst' | 'auditor' | 'viewer' | string
+  tenant_id: string
+  auth_method: string
+}
+
+export interface UserActionEntry {
+  id: string
+  timestamp: string
+  user_id: string
+  user_name: string
+  user_email: string
+  role: string
+  tenant_id: string
+  action: string
+  target_id: string
+  ip_address?: string
+  details: Record<string, any>
+}
+
+export interface PublishedKeyStore {
+  active_key_id: string
+  keys: Array<{
+    key_id: string
+    public_key_b64: string
+    algorithm: string
+    registered_at: string
+    notary_provider: string
+  }>
+  rotation_history: any[]
+}
+
+export interface CveIntel {
+  cve_id: string
+  in_cisa_kev: boolean
+  kev_details?: any
+  epss: {
+    cve: string
+    epss: number
+    percentile: number
+    date: string
+  }
+  triage_recommendation: string
+}
+
+export interface LogUploadResult {
+  accepted: number
+  rejected: number
+  total: number
+  parsed_events_count: number
+  warnings: string[]
+  status: string
+}
+
+export interface TicketResult {
+  id: string
+  system: 'jira' | 'servicenow' | string
+  key: string
+  status: string
+  url: string
+  created_at: string
+}
+
+export type UserRole = 'admin' | 'approver' | 'analyst' | 'auditor' | 'viewer'
+
 

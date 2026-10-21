@@ -275,5 +275,12 @@ Navigate the entire Postern console directly from the keyboard:
 
 ---
 
-## 📄 License
-This project is proprietary software developed for enterprise security assurance and demonstration purposes. All rights reserved.
+## 📄 License & Open-Source Community
+
+This project is licensed under the [Apache License, Version 2.0](LICENSE).
+
+- 🔒 **Security Policy**: See [SECURITY.md](SECURITY.md) for vulnerability disclosure procedures and cryptographic threat model.
+- 🤝 **Contributing**: See [CONTRIBUTING.md](CONTRIBUTING.md) for local environment setup and testing guidelines.
+- 🏛️ **Architecture & RFC Specs**: See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for complete technical architecture.
+- 📡 **OpenAPI & cURL Reference**: See [docs/OPENAPI_EXAMPLES.md](docs/OPENAPI_EXAMPLES.md) for API usage examples.
+

@@ -118,3 +118,7 @@ class ClockManager:
             details={"resumed_seconds": clock.seconds_remaining}
         )
         return clock
+
+    def reset_all(self):
+        self.clocks.clear()
+

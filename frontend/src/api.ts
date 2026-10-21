@@ -28,14 +28,44 @@ function normalizeApiBaseUrl(): string {
 
 export const BASE_URL = normalizeApiBaseUrl()
 
+let activeAuthToken: string = typeof window !== 'undefined'
+  ? localStorage.getItem('postern_auth_token') || 'pg_admin_master_superkey'
+  : 'pg_admin_master_superkey'
+
+export function getActiveAuthToken(): string {
+  return activeAuthToken
+}
+
+export function setActiveAuthToken(token: string) {
+  activeAuthToken = token
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('postern_auth_token', token)
+  }
+}
+
+export function setActiveRole(role: 'admin' | 'approver' | 'analyst' | 'auditor' | 'viewer') {
+  const roleKeys: Record<string, string> = {
+    admin: 'pg_admin_master_superkey',
+    approver: 'pg_live_approver_key_777',
+    analyst: 'pg_live_meridian_key_001',
+    auditor: 'pg_live_auditor_key_888',
+    viewer: 'pg_live_viewer_key_999'
+  }
+  const key = roleKeys[role] || 'pg_admin_master_superkey'
+  setActiveAuthToken(key)
+}
+
 /**
  * Robust enterprise API client helper with standardized error handling and status code validation.
  */
-async function apiRequest<T>(path: string, options?: RequestInit, timeoutMs = 5000): Promise<T> {
+async function apiRequest<T>(path: string, options?: RequestInit, timeoutMs = 8000): Promise<T> {
   const url = `${BASE_URL}${path}`
   const headers = new Headers(options?.headers || {})
   if (!headers.has('Content-Type') && (!options?.method || options.method !== 'GET')) {
     headers.set('Content-Type', 'application/json')
+  }
+  if (!headers.has('Authorization') && activeAuthToken) {
+    headers.set('Authorization', `Bearer ${activeAuthToken}`)
   }
 
   const controller = new AbortController()
@@ -507,4 +537,140 @@ export async function postAssetMessage(
     body: JSON.stringify(payload)
   })
 }
+
+// ---------------------------------------------------------------------------
+// Enterprise Multi-Tenancy, Ingestion, CVE & Ticketing APIs
+// ---------------------------------------------------------------------------
+
+export async function fetchCurrentUser() {
+  return apiRequest<any>('/auth/me')
+}
+
+export async function login(payload: { username?: string; password?: string; tenant_id?: string; sso_token?: string }) {
+  return apiRequest<any>('/auth/login', {
+    method: 'POST',
+    body: JSON.stringify(payload)
+  })
+}
+
+export async function fetchApiKeys(tenantId?: string) {
+  const query = tenantId ? `?tenant_id=${encodeURIComponent(tenantId)}` : ''
+  return apiRequest<any[]>(`/auth/api-keys${query}`)
+}
+
+export async function createApiKey(payload: { name: string; tenant_id: string; role: string }) {
+  return apiRequest<any>('/auth/api-keys', {
+    method: 'POST',
+    body: JSON.stringify(payload)
+  })
+}
+
+export async function testConnector(payload: { type: 'wazuh' | 'elastic' | 'sentinel' | 'splunk'; host: string; port?: number; token?: string }) {
+  return apiRequest<any>('/connectors/test', {
+    method: 'POST',
+    body: JSON.stringify(payload)
+  })
+}
+
+export async function uploadLogFile(file: File, format: 'csv' | 'json', tenantId = 'meridian-finance') {
+  const formData = new FormData()
+  formData.append('file', file)
+  const url = `${BASE_URL}/connectors/upload?format=${encodeURIComponent(format)}&tenant_id=${encodeURIComponent(tenantId)}`
+  
+  const headers = new Headers()
+  if (activeAuthToken) {
+    headers.set('Authorization', `Bearer ${activeAuthToken}`)
+  }
+  
+  const res = await fetch(url, {
+    method: 'POST',
+    headers,
+    body: formData
+  })
+  
+  if (!res.ok) {
+    let err = `HTTP ${res.status}: ${res.statusText}`
+    try {
+      const j = await res.json()
+      if (j && j.detail) err = j.detail
+    } catch {}
+    throw new Error(err)
+  }
+  return await res.json()
+}
+
+export async function syncCveData(force = false) {
+  return apiRequest<any>(`/cve/sync?force=${force}`, { method: 'POST' })
+}
+
+export async function fetchCveKev(params?: { limit?: number; offset?: number; search?: string }) {
+  const q = new URLSearchParams()
+  if (params?.limit) q.set('limit', String(params.limit))
+  if (params?.offset) q.set('offset', String(params.offset))
+  if (params?.search) q.set('search', params.search)
+  return apiRequest<any>(`/cve/kev?${q.toString()}`)
+}
+
+export async function fetchCveIntel(cveId: string) {
+  return apiRequest<any>(`/cve/${encodeURIComponent(cveId)}`)
+}
+
+export async function fetchPublishedKeys() {
+  return apiRequest<any>('/crypto/public-keys')
+}
+
+export async function rotateSigningKey(reason = 'Scheduled Enterprise Key Rotation') {
+  return apiRequest<any>('/crypto/rotate-key', {
+    method: 'POST',
+    body: JSON.stringify({ reason })
+  })
+}
+
+export const rotateNotaryKey = rotateSigningKey
+
+export async function createJiraTicket(assetId: string, issueType = 'Security Incident') {
+  return apiRequest<any>('/integrations/jira', {
+    method: 'POST',
+    body: JSON.stringify({ asset_id: assetId, issue_type: issueType })
+  })
+}
+
+export async function createServiceNowIncident(assetId: string, urgency = '1', impact = '1') {
+  return apiRequest<any>('/integrations/servicenow', {
+    method: 'POST',
+    body: JSON.stringify({ asset_id: assetId, urgency, impact })
+  })
+}
+
+export async function sendSlackAlert(assetId: string, channel = '#soc-alerts') {
+  return apiRequest<any>('/notifications/slack', {
+    method: 'POST',
+    body: JSON.stringify({ asset_id: assetId, channel })
+  })
+}
+
+export async function sendTeamsAlert(assetId: string, webhookUrl?: string) {
+  return apiRequest<any>('/notifications/teams', {
+    method: 'POST',
+    body: JSON.stringify({ asset_id: assetId, webhook_url: webhookUrl })
+  })
+}
+
+export async function fetchUserAuditActions(limit = 100, actionType?: string) {
+  const q = new URLSearchParams({ limit: String(limit) })
+  if (actionType) q.set('action_type', actionType)
+  return apiRequest<any[]>(`/audit/actions?${q.toString()}`)
+}
+
+export async function createSystemBackup(label = 'manual_snapshot') {
+  return apiRequest<any>('/system/backup', {
+    method: 'POST',
+    body: JSON.stringify({ label })
+  })
+}
+
+export async function fetchSystemBackups() {
+  return apiRequest<any>('/system/backups')
+}
+
 

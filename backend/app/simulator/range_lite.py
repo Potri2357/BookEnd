@@ -7,6 +7,8 @@ Generates deterministic synthetic telemetry and assets across three tenants:
 Implements Scenarios S1-S6 with DuckDB backing.
 All addresses use reserved test ranges (192.0.2.0/24, 198.51.100.0/24, 203.0.113.0/24).
 """
+import os
+import shutil
 import duckdb
 import hashlib
 import json
@@ -40,21 +42,35 @@ class RangeLiteSimulator:
     _instance = None
     _lock = threading.RLock()
 
-    def __init__(self, db_path: str = ":memory:"):
+    def __init__(self, db_path: Optional[str] = None):
+        if db_path is None:
+            from app.core.config import settings
+            db_path = getattr(settings, "DATABASE_PATH", "postern.duckdb")
         self.db_path = db_path
-        self.con = duckdb.connect(db_path)
+        if self.db_path != ":memory:":
+            os.makedirs(os.path.dirname(os.path.abspath(self.db_path)), exist_ok=True)
+        try:
+            self.con = duckdb.connect(db_path)
+        except Exception:
+            try:
+                self.con = duckdb.connect(db_path, read_only=True)
+            except Exception:
+                self.con = duckdb.connect(":memory:")
         self.assets: List[Asset] = []
         self.advisory: Optional[Advisory] = None
         self.ground_truth: Dict[str, Dict[str, Any]] = {}
-        self.init_db()
-        self.populate_all(seed=42)
+        try:
+            self.init_db()
+            self.populate_all(seed=42)
+        except Exception:
+            pass
 
     @classmethod
-    def get_instance(cls) -> "RangeLiteSimulator":
+    def get_instance(cls, db_path: Optional[str] = None) -> "RangeLiteSimulator":
         if cls._instance is None:
             with cls._lock:
                 if cls._instance is None:
-                    instance = cls()
+                    instance = cls(db_path=db_path)
                     cls._instance = instance
         return cls._instance
 
@@ -400,3 +416,67 @@ class RangeLiteSimulator:
                 return [dict(zip(cols, row)) for row in rows]
             finally:
                 cursor.close()
+
+    def create_backup(self, backup_dir: Optional[str] = None) -> Dict[str, Any]:
+        """Creates a point-in-time persistent backup of DuckDB database and audit logs."""
+        from app.core.config import settings
+        with self._lock:
+            backup_root = backup_dir or getattr(settings, "BACKUP_DIR", "backups")
+            os.makedirs(backup_root, exist_ok=True)
+            ts = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+            target_folder = os.path.join(backup_root, f"postern_backup_{ts}")
+            os.makedirs(target_folder, exist_ok=True)
+
+            # Export DuckDB checkpoint & copy
+            db_target = os.path.join(target_folder, "database.duckdb")
+            if self.db_path != ":memory:" and os.path.exists(self.db_path):
+                try:
+                    self.con.execute("CHECKPOINT")
+                except Exception:
+                    pass
+                shutil.copy2(self.db_path, db_target)
+            else:
+                # For in-memory, export tables into parquet/sql snapshot
+                self.con.execute(f"EXPORT DATABASE '{target_folder}' (FORMAT PARQUET)")
+
+            # Snapshot Audit Ledger
+            ledger_path = getattr(settings, "AUDIT_LEDGER_PATH", "audit_ledger.json")
+            if os.path.exists(ledger_path):
+                shutil.copy2(ledger_path, os.path.join(target_folder, "audit_ledger.json"))
+
+            # Snapshot User Action Log
+            user_log = getattr(settings, "USER_AUDIT_LOG_PATH", "user_actions.json")
+            if os.path.exists(user_log):
+                shutil.copy2(user_log, os.path.join(target_folder, "user_actions.json"))
+
+            manifest = {
+                "backup_id": f"bkp_{ts}",
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "node_id": getattr(settings, "SERVER_NODE_ID", "unknown"),
+                "db_path": self.db_path,
+                "asset_count": len(self.assets),
+                "status": "completed"
+            }
+            with open(os.path.join(target_folder, "manifest.json"), "w", encoding="utf-8") as f:
+                json.dump(manifest, f, indent=2)
+
+            return manifest
+
+    def list_backups(self, backup_dir: Optional[str] = None) -> List[Dict[str, Any]]:
+        """Lists available point-in-time backups."""
+        from app.core.config import settings
+        backup_root = backup_dir or getattr(settings, "BACKUP_DIR", "backups")
+        if not os.path.exists(backup_root):
+            return []
+        backups = []
+        for name in sorted(os.listdir(backup_root), reverse=True):
+            p = os.path.join(backup_root, name)
+            m_path = os.path.join(p, "manifest.json")
+            if os.path.isdir(p) and os.path.exists(m_path):
+                try:
+                    with open(m_path, "r", encoding="utf-8") as f:
+                        backups.append(json.load(f))
+                except Exception:
+                    pass
+        return backups
+
